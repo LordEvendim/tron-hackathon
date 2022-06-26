@@ -15,6 +15,7 @@ import { truncateAddress } from "../helpers/truncateAddress";
 import Countdown from "react-countdown";
 
 interface AuctionItemProps {
+  time: number;
   name: string;
   id: string;
   collection: string;
@@ -28,15 +29,16 @@ export const AuctionItem: React.FC<AuctionItemProps> = ({
   id,
   bidData,
   handleBid,
+  time,
 }) => {
   return (
     <Container
       p={"15px"}
       boxShadow={"lg"}
-      background={"white"}
       borderRadius={"20px"}
       border={"1px"}
       borderColor={"gray.200"}
+      background={"white"}
     >
       <Image src={SampleApe} borderRadius={"lg"} mb={"10px"}></Image>
       <Box fontSize={"md"} fontWeight={"bold"}>
@@ -56,11 +58,16 @@ export const AuctionItem: React.FC<AuctionItemProps> = ({
         <Box mb={"5px"} color={"gray.400"} fontSize={"smaller"}>
           ends in:
         </Box>
-        <Flex justifyContent={"center"} fontSize={"3xl"} mb={"20px"}>
-          {bidData.endingDate - Date.now() > 0 ? (
+        <Flex justifyContent={"center"} fontSize={"3xl"} mb={"30px"}>
+          {bidData.endingDate - time > 0 ? (
             <Countdown date={bidData.endingDate} />
           ) : (
-            <Box fontSize={"2xl"} fontWeight={"bold"} mb={"10px"} mt={"10px"}>
+            <Box
+              fontSize={"2xl"}
+              fontWeight={"semibold"}
+              mb={"10px"}
+              mt={"10px"}
+            >
               Auction has ended
             </Box>
           )}
@@ -69,7 +76,7 @@ export const AuctionItem: React.FC<AuctionItemProps> = ({
           <Button w={"120px"} onClick={() => handleBid()}>
             Bid
           </Button>
-          <Box fontWeight={"bold"}>{bidData.price} HBAR</Box>
+          <Box fontWeight={"bold"}>{bidData.price} TRN</Box>
         </Flex>
       </Flex>
     </Container>

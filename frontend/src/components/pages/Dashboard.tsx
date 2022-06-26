@@ -11,7 +11,7 @@ import {
   VStack,
   Text,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuctionItem } from "../AuctionItem";
 import faker from "@faker-js/faker";
@@ -28,8 +28,7 @@ const auctions = new Array(10).fill(0).map(() => ({
   bidData: {
     bidder: faker.finance.ethereumAddress(),
     price: (Math.round(Math.random() * 10000) / 100).toString(),
-    endingDate:
-      Date.now() + 30 * 60 * 1000 * (Math.round(Math.random() * 10) + 1),
+    endingDate: Date.now() + 30 * 60 * (Math.round(Math.random() * 10) + 1),
   },
 }));
 
@@ -38,6 +37,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [isBidModalOpen, setIsBidModalOpen] = useState<boolean>(false);
   const [isBiddingLoading, setIsBiddingLoading] = useState<boolean>(false);
   const [bidValue, setBidValue] = useState<string>("");
+  const [time, setTime] = useState<number>(Date.now());
 
   const handleOpenBidModal = () => {
     setIsBidModalOpen(true);
@@ -47,6 +47,16 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     setIsBiddingLoading(true);
     console.log(bidValue);
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(Date.now());
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <Container w={"full"} centerContent>
@@ -121,9 +131,13 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           </HStack>
         </Flex>
         <Box h={"2"} />
-        <Grid templateColumns="repeat(3, 1fr)" gap={6}>
+        <Grid templateColumns="repeat(3, 1fr)" gap={3}>
           {auctions.map((element) => (
-            <AuctionItem {...element} handleBid={handleOpenBidModal} />
+            <AuctionItem
+              {...element}
+              time={time}
+              handleBid={handleOpenBidModal}
+            />
           ))}
         </Grid>
       </Box>

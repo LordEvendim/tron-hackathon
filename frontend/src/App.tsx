@@ -13,32 +13,10 @@ import { useApplicationInitialization } from "./modules/initialization/useApplic
 import { Create } from "./components/pages/Create";
 import { DepositNft } from "./components/pages/DepositNft";
 import { Deposit } from "./components/pages/Deposit";
-import { useHashconnect } from "./stores/useHashconnect";
 import { useUserData } from "./stores/useUserData";
 
 const App: React.FC<{}> = () => {
   const status = useApplicationInitialization();
-  const hashconnect = useHashconnect((state) => state.hashconenct);
-  const login = useUserData((state) => state.login);
-  const saveData = useHashconnect((state) => state.data);
-  const SetSavedata = useHashconnect((state) => state.setData);
-
-  useEffect(() => {
-    const saveDataInLocalstorage = async () => {
-      let data = JSON.stringify(saveData);
-
-      localStorage.setItem("hashconnectData", data);
-    };
-
-    hashconnect.pairingEvent.once((pairingData) => {
-      pairingData.accountIds.forEach((id) => {
-        console.log(id);
-        login(id);
-        saveDataInLocalstorage();
-        SetSavedata({ ...saveData, pairedAccounts: [id] });
-      });
-    });
-  }, [hashconnect, login, SetSavedata]);
 
   switch (status.status) {
     case "failed":

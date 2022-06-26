@@ -1,7 +1,6 @@
 import { Box, Button, Container, Heading } from "@chakra-ui/react";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { hethers } from "@hashgraph/hethers";
 import { MIRAN_CORE } from "../../constants/contracts";
 import MiranCore from "../../contracts/MiranCore.json";
 
@@ -21,10 +20,10 @@ export const Mainpage: React.FC<MainpageProps> = () => {
           <Button
             variant="link"
             size="4xl"
-            textColor="purple.600"
+            textColor="red.500"
             fontWeight="bold"
           >
-            Hedera
+            TRON
           </Button>
         </Heading>
         <Box h={6} w="full" />

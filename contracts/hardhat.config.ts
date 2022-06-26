@@ -81,13 +81,6 @@ const config: HardhatUserConfig = {
           ? [process.env.PRIVATE_KEY_MUMBAI]
           : [],
     },
-    thetaTestnet: {
-      url: process.env.THETA_TESTNET_URL ?? "",
-      accounts:
-        process.env.PRIVATE_KEY_THETA !== undefined
-          ? [process.env.PRIVATE_KEY_THETA]
-          : [],
-    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

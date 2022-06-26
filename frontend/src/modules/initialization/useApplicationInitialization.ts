@@ -1,14 +1,10 @@
 import { AsyncActionState } from "../../types/states/asyncActionState";
 
 import { useCallback, useEffect, useState } from "react";
-import { useHashconnect } from "../../stores/useHashconnect";
-import { initalizeHashconnect } from "../hashconnect/initializeHashconnect";
 
 export const useApplicationInitialization = () => {
   const [initializationStatus, setInitializationStatus] =
     useState<AsyncActionState>({ status: undefined });
-  const hashconnect = useHashconnect((state) => state.hashconenct);
-  const setSaveData = useHashconnect((state) => state.setData);
 
   const initializeApplication = useCallback(async () => {
     try {
@@ -30,10 +26,10 @@ export const useApplicationInitialization = () => {
   }, []);
 
   useEffect(() => {
-    if (hashconnect && initializationStatus.status === undefined) {
+    if (initializationStatus.status === undefined) {
       initializeApplication();
     }
-  }, [hashconnect, initializationStatus, initializeApplication]);
+  }, [initializationStatus, initializeApplication]);
 
   return initializationStatus;
 };

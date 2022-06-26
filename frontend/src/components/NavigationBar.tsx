@@ -16,43 +16,15 @@ import { truncateAddress } from "../helpers/truncateAddress";
 import { useUserData } from "../stores/useUserData";
 import Logo from "../assets/miranlogo.png";
 
-import { useHashconnect } from "../stores/useHashconnect";
-import { initalizeHashconnect } from "../modules/hashconnect/initializeHashconnect";
-
 interface NavigationBarProps {}
 
 export const NavigationBar: React.FC<NavigationBarProps> = () => {
   const userAddress = useUserData((state) => state.address);
-  const hashconnect = useHashconnect((state) => state.hashconenct);
-  const hashpackData = useHashconnect((state) => state.data);
-  const setData = useHashconnect((state) => state.setData);
   const logout = useUserData((state) => state.logout);
 
-  const handleConnect = async () => {
-    if (!hashconnect) throw new Error("Hashconnect has not been initialized");
+  const handleConnect = async () => {};
 
-    // Hashconnect initalization goes here
-    const [firstTimeLogin, pairingKey] = await initalizeHashconnect();
-
-    if (!firstTimeLogin) return;
-
-    hashconnect.findLocalWallets();
-    console.log(pairingKey);
-
-    hashconnect.connectToLocalWallet(pairingKey);
-  };
-
-  const disconnectWallet = async () => {
-    setData({
-      pairedAccounts: [],
-      pairingString: "",
-      topic: "",
-      pairedWalletData: undefined,
-      privateKey: "",
-    });
-    logout();
-    localStorage.removeItem("hashconnectData");
-  };
+  const disconnectWallet = async () => {};
 
   return (
     <Box w="100%">
