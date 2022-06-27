@@ -1,4 +1,4 @@
-export const mintModalStyle = {
+export const bidModalStyle = {
   content: {
     height: "400px",
     width: "800px",

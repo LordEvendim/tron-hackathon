@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { AuctionItem } from "../AuctionItem";
 import faker from "@faker-js/faker";
 import { AiOutlineInfoCircle } from "react-icons/ai";
-import { mintModalStyle } from "../../modals/mintModalStyle";
+import { bidModalStyle } from "../../modals/bidModalStyle";
 import Modal from "react-modal";
 
 interface DashboardProps {}
@@ -63,7 +63,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       <Modal
         isOpen={isBidModalOpen}
         onRequestClose={() => setIsBidModalOpen(false)}
-        style={mintModalStyle}
+        style={bidModalStyle}
         contentLabel="Example Modal"
       >
         <Heading
@@ -120,13 +120,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               }}
             >
               deposit NFT
-            </Button>
-            <Button
-              onClick={() => {
-                navigate("/deposit");
-              }}
-            >
-              deposit liquidity
             </Button>
           </HStack>
         </Flex>

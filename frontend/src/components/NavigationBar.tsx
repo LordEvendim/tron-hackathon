@@ -5,17 +5,13 @@ import {
   Flex,
   Heading,
   HStack,
-  Image,
   Spacer,
   Text,
 } from "@chakra-ui/react";
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-import { truncateAddress } from "../helpers/truncateAddress";
 import { useUserData } from "../stores/useUserData";
-import Logo from "../assets/miranlogo.png";
-
 interface NavigationBarProps {}
 
 export const NavigationBar: React.FC<NavigationBarProps> = () => {
@@ -24,29 +20,35 @@ export const NavigationBar: React.FC<NavigationBarProps> = () => {
 
   const handleConnect = async () => {};
 
-  const disconnectWallet = async () => {};
+  const disconnectWallet = async () => {
+    logout();
+  };
 
   return (
-    <Box w="100%">
-      <Flex mx={"auto"} w="60%" py={6} alignItems="">
+    <Box w="100%" height={"120px"}>
+      <Flex
+        mx={"auto"}
+        w="60%"
+        py={6}
+        justifyContent={"center"}
+        alignItems="center"
+      >
         <Box>
-          <Heading>
-            <NavLink to={"/"}>
-              <Image src={Logo} h={"80px"} />
-            </NavLink>
+          <Heading color={"white"}>
+            <NavLink to={"/"}>FairHouse</NavLink>
           </Heading>
         </Box>
         <Spacer />
         <HStack spacing="64px">
-          <Button variant="link" textColor="gray.600">
+          <Button variant="link" textColor="white">
             <NavLink to={"/about"}>About</NavLink>
           </Button>
-          <Button variant="link" textColor="gray.600">
+          <Button variant="link" textColor="white">
             <NavLink to={"/contracts"}>Contracts</NavLink>
           </Button>
-          <Button variant="link" textColor="gray.600">
+          <Button variant="link" textColor="white">
             <NavLink to={"/dashboard"}>
-              <Text color={"cyan.600"}>Auctions</Text>
+              <Text color={"white"}>Auctions</Text>
             </NavLink>
           </Button>
 
