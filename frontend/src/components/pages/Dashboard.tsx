@@ -10,6 +10,9 @@ import {
   Spacer,
   VStack,
   Text,
+  GridItem,
+  Select,
+  Textarea,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -39,6 +42,11 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [bidValue, setBidValue] = useState<string>("");
   const [time, setTime] = useState<number>(Date.now());
 
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [interest, setInterest] = useState<string>("");
+  const [symbol, setSymbol] = useState<string>("");
+
   const handleOpenBidModal = () => {
     setIsBidModalOpen(true);
   };
@@ -59,7 +67,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   }, []);
 
   return (
-    <Container w={"full"} centerContent>
+    <Box w={"full"} paddingX={"80px"} marginBottom={"40px"}>
       <Modal
         isOpen={isBidModalOpen}
         onRequestClose={() => setIsBidModalOpen(false)}
@@ -102,12 +110,21 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         </Text>
       </Modal>
       <Box h={"10"} />
-      <Box w={"container.xl"}>
-        <Flex>
-          <Heading mb={"4"}>Auctions</Heading>
-          <Spacer />
-          <HStack spacing={"10px"}>
+      <Box width={"full"}>
+        <Flex align={"center"}>
+          <Heading
+            mb={"4"}
+            marginLeft={"20px"}
+            marginRight={"30px"}
+            color={"gray.800"}
+          >
+            Auctions
+          </Heading>
+          <HStack marginBottom={"8px"} spacing={"20px"}>
             <Button
+              bg={"purple.400"}
+              color={"white"}
+              boxShadow={"md"}
               onClick={() => {
                 navigate("/create");
               }}
@@ -115,6 +132,9 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               + create auction
             </Button>
             <Button
+              bg={"purple.400"}
+              color={"white"}
+              boxShadow={"md"}
               onClick={() => {
                 navigate("/deposit-nft");
               }}
@@ -124,16 +144,96 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           </HStack>
         </Flex>
         <Box h={"2"} />
-        <Grid templateColumns="repeat(3, 1fr)" gap={3}>
-          {auctions.map((element) => (
-            <AuctionItem
-              {...element}
-              time={time}
-              handleBid={handleOpenBidModal}
-            />
-          ))}
+        <Grid templateColumns="repeat(4, 1fr)" gap={3}>
+          <GridItem colSpan={1}>
+            <Box
+              boxShadow={"lg"}
+              borderRadius={"20px"}
+              border={"1px"}
+              borderColor={"gray.200"}
+              background={"white"}
+              height={"600px"}
+              padding={"20px"}
+            >
+              <Text ml={2} mb={1} fontSize={"sm"}>
+                Collection
+              </Text>
+              <Input
+                backgroundColor={"white"}
+                mb={4}
+                onChange={(event) => {
+                  setName(event.target.value);
+                }}
+              ></Input>
+              <Text ml={2} mb={1} fontSize={"sm"}>
+                Name / ID
+              </Text>
+              <Input
+                backgroundColor={"white"}
+                mb={4}
+                onChange={(event) => {
+                  setSymbol(event.target.value);
+                }}
+              ></Input>
+              <Text ml={2} mb={1} fontSize={"sm"}>
+                Bidder
+              </Text>
+              <Input
+                backgroundColor={"white"}
+                mb={4}
+                onChange={(event) => {
+                  setDescription(event.target.value);
+                }}
+              ></Input>
+              <Text ml={2} mb={1} fontSize={"sm"}>
+                Price
+              </Text>
+              <HStack mb={4}>
+                <Input
+                  backgroundColor={"white"}
+                  onChange={(event) => {
+                    setDescription(event.target.value);
+                  }}
+                ></Input>
+                <Input
+                  backgroundColor={"white"}
+                  onChange={(event) => {
+                    setDescription(event.target.value);
+                  }}
+                ></Input>
+              </HStack>
+              <Text ml={2} mb={1} fontSize={"sm"}>
+                Time to end
+              </Text>
+              <HStack mb={4}>
+                <Input
+                  backgroundColor={"white"}
+                  onChange={(event) => {
+                    setDescription(event.target.value);
+                  }}
+                ></Input>
+                <Input
+                  backgroundColor={"white"}
+                  onChange={(event) => {
+                    setDescription(event.target.value);
+                  }}
+                ></Input>
+              </HStack>
+            </Box>
+          </GridItem>
+          <GridItem colSpan={3}>
+            <Grid templateColumns="repeat(3, 1fr)" gap={3}>
+              {auctions.map((element) => (
+                <AuctionItem
+                  {...element}
+                  time={time}
+                  handleBid={handleOpenBidModal}
+                />
+              ))}
+            </Grid>
+          </GridItem>
         </Grid>
       </Box>
-    </Container>
+    </Box>
   );
 };
