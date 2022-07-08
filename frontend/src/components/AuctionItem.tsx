@@ -10,27 +10,28 @@ import {
 } from "@chakra-ui/react";
 import React from "react";
 import SampleApe from "../assets/sample-ape.jpg";
-import { BidData } from "../types/bid/bid";
 import { truncateAddress } from "../helpers/truncateAddress";
 import Countdown from "react-countdown";
+import { Auction } from "../stores/useAuctions";
+import { ethers } from "ethers";
 
-interface AuctionItemProps {
-  time: number;
-  name: string;
-  id: string;
-  collection: string;
-  bidData: BidData;
+type AuctionItemProps = {
   handleBid: () => void;
-}
+  time: number;
+} & Auction;
 
 export const AuctionItem: React.FC<AuctionItemProps> = ({
-  name,
-  collection,
-  id,
-  bidData,
+  tokenId,
+  collectionAddress,
+  bidder,
+  endingTime,
   handleBid,
+  price,
   time,
 }) => {
+  const endingTimeFormated = parseInt(endingTime.toString());
+  const priceFormatted = ethers.utils.formatEther(price);
+
   return (
     <Container
       p={"15px"}
@@ -42,10 +43,10 @@ export const AuctionItem: React.FC<AuctionItemProps> = ({
     >
       <Image src={SampleApe} borderRadius={"lg"} mb={"10px"}></Image>
       <Box fontSize={"md"} fontWeight={"bold"}>
-        {name} #{id}
+        {tokenId} #{tokenId}
       </Box>
       <Box fontSize={"sm"} color={"gray.400"}>
-        {collection}
+        {collectionAddress}
       </Box>
       <Divider my={"10px"}></Divider>
       <Flex direction={"column"} alignItems={"stretch"} px={"10px"}>
@@ -53,14 +54,14 @@ export const AuctionItem: React.FC<AuctionItemProps> = ({
           <Text fontSize={"smaller"} color={"gray.400"}>
             bidder:{" "}
           </Text>
-          <Text color={"black"}>{truncateAddress(bidData.bidder, 20)}</Text>
+          <Text color={"black"}>{truncateAddress(bidder, 20)}</Text>
         </HStack>
         <Box mb={"5px"} color={"gray.400"} fontSize={"smaller"}>
           ends in:
         </Box>
         <Flex justifyContent={"center"} fontSize={"3xl"} mb={"30px"}>
-          {bidData.endingDate - time > 0 ? (
-            <Countdown date={bidData.endingDate} />
+          {endingTimeFormated - time > 0 ? (
+            <Countdown date={endingTimeFormated} />
           ) : (
             <Box
               fontSize={"2xl"}
@@ -76,7 +77,7 @@ export const AuctionItem: React.FC<AuctionItemProps> = ({
           <Button w={"120px"} onClick={() => handleBid()}>
             Bid
           </Button>
-          <Box fontWeight={"bold"}>{bidData.price} TRN</Box>
+          <Box fontWeight={"bold"}>{priceFormatted} TRN</Box>
         </Flex>
       </Flex>
     </Container>

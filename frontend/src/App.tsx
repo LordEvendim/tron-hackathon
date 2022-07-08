@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import React from "react";
+import { Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Center } from "@chakra-ui/react";
@@ -13,7 +13,7 @@ import { useApplicationInitialization } from "./modules/initialization/useApplic
 import { Create } from "./components/pages/Create";
 import { DepositNft } from "./components/pages/DepositNft";
 import { Deposit } from "./components/pages/Deposit";
-import { useUserData } from "./stores/useUserData";
+import { WIthdraw } from "./components/pages/Withdraw";
 
 const App: React.FC<{}> = () => {
   const status = useApplicationInitialization();
@@ -46,6 +46,7 @@ const App: React.FC<{}> = () => {
             <Route path="/deposit-nft" element={<DepositNft />} />
             <Route path="/deposit" element={<Deposit />} />
             <Route path="/about" element={<About />} />
+            <Route path="/withdraw" element={<WIthdraw />} />
           </Routes>
         </>
       );

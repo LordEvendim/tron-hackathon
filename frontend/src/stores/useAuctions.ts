@@ -2,7 +2,7 @@ import { BigNumberish } from "ethers";
 import { toast } from "react-toastify";
 import create from "zustand";
 import { useContracts } from "./useContracts";
-export type TokenDetails = {
+export type AuctionDetails = {
   address: string;
   name: string;
   symbol: string;
@@ -28,27 +28,28 @@ export type BidInfo = {
   endingTime: BigNumberish;
 };
 
-interface useTokensStore {
+interface useAuctionsStore {
   auctions: Auction[] | undefined;
   fetchAuctions: () => void;
   updateAuction: (bidInfo: BidInfo) => void;
 }
 
-export const useTokens = create<useTokensStore>((set, get) => ({
+export const useAuctions = create<useAuctionsStore>((set, get) => ({
   auctions: [],
   fetchAuctions: async () => {
     try {
+      console.log("fetching auctions");
       const factory = useContracts.getState().core;
 
       if (!factory) {
-        throw new Error("Factory initialization failed");
+        throw new Error("Contract initialization failed");
       }
 
       const auctions = await factory.getAllAuctions();
       console.log(auctions);
 
       if (!auctions) {
-        throw new Error("Failed to fetch listings");
+        throw new Error("Failed to fetch auctions");
       }
 
       const formatedAuctions = auctions.map((element) => ({

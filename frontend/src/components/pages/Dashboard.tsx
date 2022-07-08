@@ -1,18 +1,14 @@
 import {
   Box,
   Button,
-  Container,
   Flex,
   Grid,
   Heading,
   HStack,
   Input,
-  Spacer,
   VStack,
   Text,
   GridItem,
-  Select,
-  Textarea,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +17,7 @@ import faker from "@faker-js/faker";
 import { AiOutlineInfoCircle } from "react-icons/ai";
 import { bidModalStyle } from "../../modals/bidModalStyle";
 import Modal from "react-modal";
+import { useAuctions } from "../../stores/useAuctions";
 
 interface DashboardProps {}
 
@@ -31,7 +28,7 @@ const auctions = new Array(10).fill(0).map(() => ({
   bidData: {
     bidder: faker.finance.ethereumAddress(),
     price: (Math.round(Math.random() * 10000) / 100).toString(),
-    endingDate: Date.now() + 30 * 60 * (Math.round(Math.random() * 10) + 1),
+    endingDate: Date.now() + 300 * 60 * (Math.round(Math.random() * 10) + 1),
   },
 }));
 
@@ -41,6 +38,8 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [isBiddingLoading, setIsBiddingLoading] = useState<boolean>(false);
   const [bidValue, setBidValue] = useState<string>("");
   const [time, setTime] = useState<number>(Date.now());
+  const fetchAuctions = useAuctions((state) => state.fetchAuctions);
+  const auctionsFetched = useAuctions((state) => state.auctions);
 
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -56,6 +55,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     console.log(bidValue);
   };
 
+  // update every second to force update of child components
   useEffect(() => {
     const interval = setInterval(() => {
       setTime(Date.now());
@@ -65,6 +65,15 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       clearInterval(interval);
     };
   }, []);
+
+  // fetch auctions
+  useEffect(() => {
+    fetchAuctions();
+  }, [fetchAuctions]);
+
+  useEffect(() => {
+    console.log(auctionsFetched);
+  }, [auctionsFetched]);
 
   return (
     <Box w={"full"} paddingX={"80px"} marginBottom={"40px"}>
@@ -136,10 +145,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               color={"white"}
               boxShadow={"md"}
               onClick={() => {
-                navigate("/deposit-nft");
+                navigate("/withdraw");
               }}
             >
-              deposit NFT
+              withdraw
             </Button>
           </HStack>
         </Flex>
@@ -223,7 +232,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           </GridItem>
           <GridItem colSpan={3}>
             <Grid templateColumns="repeat(3, 1fr)" gap={3}>
-              {auctions.map((element) => (
+              {auctionsFetched?.map((element) => (
                 <AuctionItem
                   {...element}
                   time={time}

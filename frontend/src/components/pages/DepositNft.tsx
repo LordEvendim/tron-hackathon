@@ -96,6 +96,8 @@ export const DepositNft: React.FC<DepositNftProps> = () => {
             <Button
               w={"full"}
               h={"50px"}
+              bg={"purple.400"}
+              color={"white"}
               onClick={() => handleDeposit()}
               boxShadow={"sm"}
               isLoading={isExecuting}

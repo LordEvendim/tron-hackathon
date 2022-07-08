@@ -15,11 +15,19 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { AiOutlineArrowLeft } from "react-icons/ai";
+import { ethers } from "ethers";
+import ERC721Contract from "../../contracts/ERC721.json";
+import { ERC721 } from "../../contracts/typechain/ERC721";
+import { useProvider } from "../../stores/useProvider";
+import { useUserData } from "../../stores/useUserData";
+import { MIRAN_CORE } from "../../constants/contracts";
 
 interface CreateProps {}
 
 export const Create: React.FC<CreateProps> = () => {
   let navigate = useNavigate();
+  const provider = useProvider((state) => state.provider);
+  const userAddress = useUserData((state) => state.address);
 
   const [collectionAddress, setCollectionAddress] = useState<string>();
   const [tokenId, setTokenId] = useState<string>();
@@ -29,11 +37,45 @@ export const Create: React.FC<CreateProps> = () => {
   const handleCreateAuction = async () => {
     setIsCreating(true);
     try {
-      // Check is contract owns NFT
-      // Call contract function
+      console.log("creating the auction");
       console.log(collectionAddress);
       console.log(tokenId);
       console.log(startingPrice);
+
+      if (!collectionAddress) {
+        throw new Error("Please provide the collection address");
+      }
+
+      if (!provider) {
+        throw new Error("Provider is not defined");
+      }
+
+      if (!userAddress) {
+        throw new Error("Please login");
+      }
+
+      if (!tokenId) {
+        throw new Error("Please provide the token Id");
+      }
+
+      console.log("Creating the contract code");
+      const collectionContract = new ethers.Contract(
+        collectionAddress,
+        ERC721Contract.abi,
+        provider.getSigner()
+      ) as ERC721;
+
+      console.log("Transfering the NFT");
+      const result = await collectionContract.transferFrom(
+        userAddress,
+        MIRAN_CORE,
+        tokenId
+      );
+      console.log(result);
+
+      toast.success("NFT successfully deposited");
+      result.wait(1);
+
       setIsCreating(false);
     } catch (error: any) {
       if (error instanceof Error) {
@@ -97,6 +139,8 @@ export const Create: React.FC<CreateProps> = () => {
             <Button
               w={"full"}
               h={"50px"}
+              bg={"purple.400"}
+              color={"white"}
               onClick={handleCreateAuction}
               boxShadow={"sm"}
               isLoading={isCreating}
