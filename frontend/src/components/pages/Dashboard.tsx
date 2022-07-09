@@ -9,6 +9,7 @@ import {
   VStack,
   Text,
   GridItem,
+  Center,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -231,15 +232,26 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             </Box>
           </GridItem>
           <GridItem colSpan={3}>
-            <Grid templateColumns="repeat(3, 1fr)" gap={3}>
-              {auctionsFetched?.map((element) => (
-                <AuctionItem
-                  {...element}
-                  time={time}
-                  handleBid={handleOpenBidModal}
-                />
-              ))}
-            </Grid>
+            {auctionsFetched?.length === 0 ? (
+              <Center
+                fontSize={"3xl"}
+                color={"gray.300"}
+                mt={"50px"}
+                fontWeight={"extrabold"}
+              >
+                No available auctions {":("}
+              </Center>
+            ) : (
+              <Grid templateColumns="repeat(3, 1fr)" gap={3}>
+                {auctionsFetched?.map((element) => (
+                  <AuctionItem
+                    {...element}
+                    time={time}
+                    handleBid={handleOpenBidModal}
+                  />
+                ))}
+              </Grid>
+            )}
           </GridItem>
         </Grid>
       </Box>
