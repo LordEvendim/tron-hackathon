@@ -1,4 +1,6 @@
+import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
+import { IPFS_PREFIX, EXAMPLE_NFT_METADATA } from "./ipfs";
 
 async function main() {
   const MiranCore = await ethers.getContractFactory("MiranCore");
@@ -6,10 +8,23 @@ async function main() {
   await miranCore.deployed();
   console.log("MiranCore deployed to:", miranCore.address);
 
-  const SampleNFT = await ethers.getContractFactory("ERC721");
-  const sampleNFT = await SampleNFT.deploy("Miran collection", "MRN");
-  await sampleNFT.deployed();
-  console.log("SampleNFT deployed to:", sampleNFT.address);
+  const MiranCollection = await ethers.getContractFactory("MiranCollection");
+  const miranCollection = await MiranCollection.deploy();
+  await miranCollection.deployed();
+  console.log("MiranCollection deployed to:", miranCollection.address);
+
+  const signers = await ethers.getSigners();
+  const deployer = signers[0];
+  await miranCollection.mintNFT(
+    await deployer.getAddress(),
+    IPFS_PREFIX + EXAMPLE_NFT_METADATA
+  );
+
+  const nftOwner = await miranCollection.ownerOf(BigNumber.from("1"));
+  console.log(nftOwner);
+
+  const tokenURI = await miranCollection.tokenURI(BigNumber.from("1"));
+  console.log(tokenURI);
 }
 
 main().catch((error) => {

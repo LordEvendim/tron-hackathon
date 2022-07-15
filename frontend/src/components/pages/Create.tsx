@@ -14,13 +14,14 @@ import {
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { AiOutlineArrowLeft } from "react-icons/ai";
-import { ethers } from "ethers";
+import { AiOutlineArrowLeft, AiOutlineConsoleSql } from "react-icons/ai";
+import { BigNumber, ethers } from "ethers";
 import ERC721Contract from "../../contracts/ERC721.json";
 import { ERC721 } from "../../contracts/typechain/ERC721";
 import { useProvider } from "../../stores/useProvider";
 import { useUserData } from "../../stores/useUserData";
 import { MIRAN_CORE } from "../../constants/contracts";
+import { useContracts } from "../../stores/useContracts";
 
 interface CreateProps {}
 
@@ -28,6 +29,7 @@ export const Create: React.FC<CreateProps> = () => {
   let navigate = useNavigate();
   const provider = useProvider((state) => state.provider);
   const userAddress = useUserData((state) => state.address);
+  const miranCore = useContracts((state) => state.core);
 
   const [collectionAddress, setCollectionAddress] = useState<string>();
   const [tokenId, setTokenId] = useState<string>();
@@ -37,7 +39,7 @@ export const Create: React.FC<CreateProps> = () => {
   const handleCreateAuction = async () => {
     setIsCreating(true);
     try {
-      console.log("creating the auction");
+      console.log("<> creating the auction <>");
       console.log(collectionAddress);
       console.log(tokenId);
       console.log(startingPrice);
@@ -58,6 +60,14 @@ export const Create: React.FC<CreateProps> = () => {
         throw new Error("Please provide the token Id");
       }
 
+      if (!miranCore) {
+        throw new Error("Core contract is not defined");
+      }
+
+      if (!startingPrice) {
+        throw new Error("Starting price is not defined");
+      }
+
       console.log("Creating the contract code");
       const collectionContract = new ethers.Contract(
         collectionAddress,
@@ -73,8 +83,23 @@ export const Create: React.FC<CreateProps> = () => {
       );
       console.log(result);
 
+      await result.wait(1);
       toast.success("NFT successfully deposited");
-      result.wait(1);
+
+      const formatedPrice = ethers.utils.parseEther(startingPrice);
+
+      const resultCreation = await miranCore.createNewAuction(
+        collectionAddress,
+        tokenId,
+        formatedPrice
+      );
+
+      await resultCreation.wait(1);
+      toast.success("Auction has been created");
+
+      setCollectionAddress("");
+      setTokenId("");
+      setStartingPrice("");
 
       setIsCreating(false);
     } catch (error: any) {
