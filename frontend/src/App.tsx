@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -14,9 +14,15 @@ import { Create } from "./components/pages/Create";
 import { DepositNft } from "./components/pages/DepositNft";
 import { Deposit } from "./components/pages/Deposit";
 import { WIthdraw } from "./components/pages/Withdraw";
+import { useWallet } from "./hooks/useWallet";
 
 const App: React.FC<{}> = () => {
   const status = useApplicationInitialization();
+  const [, connectWallet] = useWallet();
+
+  useEffect(() => {
+    connectWallet();
+  }, [connectWallet]);
 
   switch (status.status) {
     case "failed":

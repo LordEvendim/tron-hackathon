@@ -11,27 +11,15 @@ import {
   GridItem,
   Center,
 } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuctionItem } from "../AuctionItem";
-import faker from "@faker-js/faker";
 import { AiOutlineInfoCircle } from "react-icons/ai";
 import { bidModalStyle } from "../../modals/bidModalStyle";
 import Modal from "react-modal";
-import { useAuctions } from "../../stores/useAuctions";
+import { Auction, useAuctions } from "../../stores/useAuctions";
 
 interface DashboardProps {}
-
-const auctions = new Array(10).fill(0).map(() => ({
-  name: "Bored Ape",
-  id: "123432",
-  collection: "Bored Apes",
-  bidData: {
-    bidder: faker.finance.ethereumAddress(),
-    price: (Math.round(Math.random() * 10000) / 100).toString(),
-    endingDate: Date.now() + 300 * 60 * (Math.round(Math.random() * 10) + 1),
-  },
-}));
 
 export const Dashboard: React.FC<DashboardProps> = () => {
   let navigate = useNavigate();
@@ -42,30 +30,30 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const fetchAuctions = useAuctions((state) => state.fetchAuctions);
   const auctionsFetched = useAuctions((state) => state.auctions);
 
-  const [name, setName] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [interest, setInterest] = useState<string>("");
+  // Filters
+  const [collectionAddressFilter, setCollectionAddressFilter] =
+    useState<string>("");
+  const [tokeIdFilter, setTokeIdFilter] = useState<string>("");
+  const [bidderFilter, setBiderFilter] = useState<string>("");
   const [symbol, setSymbol] = useState<string>("");
 
-  const handleOpenBidModal = () => {
+  const handleOpenBidModal = useCallback(() => {
     setIsBidModalOpen(true);
-  };
+  }, []);
 
   const handleBid = async () => {
     setIsBiddingLoading(true);
     console.log(bidValue);
   };
 
-  // update every second to force update of child components
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTime(Date.now());
-    }, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+  const isVisible = (auction: Auction): boolean => {
+    return collectionAddressFilter
+      ? auction.collectionAddress.substring(
+          0,
+          collectionAddressFilter.length
+        ) === collectionAddressFilter
+      : true;
+  };
 
   // fetch auctions
   useEffect(() => {
@@ -172,7 +160,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 backgroundColor={"white"}
                 mb={4}
                 onChange={(event) => {
-                  setName(event.target.value);
+                  setCollectionAddressFilter(event.target.value);
                 }}
               ></Input>
               <Text ml={2} mb={1} fontSize={"sm"}>
@@ -182,7 +170,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 backgroundColor={"white"}
                 mb={4}
                 onChange={(event) => {
-                  setSymbol(event.target.value);
+                  setTokeIdFilter(event.target.value);
                 }}
               ></Input>
               <Text ml={2} mb={1} fontSize={"sm"}>
@@ -192,7 +180,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 backgroundColor={"white"}
                 mb={4}
                 onChange={(event) => {
-                  setDescription(event.target.value);
+                  setBiderFilter(event.target.value);
                 }}
               ></Input>
               <Text ml={2} mb={1} fontSize={"sm"}>
@@ -202,13 +190,13 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 <Input
                   backgroundColor={"white"}
                   onChange={(event) => {
-                    setDescription(event.target.value);
+                    setBiderFilter(event.target.value);
                   }}
                 ></Input>
                 <Input
                   backgroundColor={"white"}
                   onChange={(event) => {
-                    setDescription(event.target.value);
+                    setBiderFilter(event.target.value);
                   }}
                 ></Input>
               </HStack>
@@ -219,13 +207,13 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 <Input
                   backgroundColor={"white"}
                   onChange={(event) => {
-                    setDescription(event.target.value);
+                    setBiderFilter(event.target.value);
                   }}
                 ></Input>
                 <Input
                   backgroundColor={"white"}
                   onChange={(event) => {
-                    setDescription(event.target.value);
+                    setBiderFilter(event.target.value);
                   }}
                 ></Input>
               </HStack>
@@ -246,8 +234,9 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 {auctionsFetched?.map((element) => (
                   <AuctionItem
                     {...element}
-                    time={time}
+                    isFiltered={!isVisible(element)}
                     handleBid={handleOpenBidModal}
+                    key={element.collectionAddress + element.tokenId}
                   />
                 ))}
               </Grid>
