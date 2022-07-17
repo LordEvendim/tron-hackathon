@@ -75,14 +75,20 @@ export const NavigationBar: React.FC<NavigationBarProps> = () => {
             <Button variant={"outline"}>
               <HStack>
                 <NavLink to={"/profile"}>
-                  <Text>{truncateAddress(userAddress, 15)}</Text>
+                  <Text color={"white"}>
+                    {truncateAddress(userAddress, 15)}
+                  </Text>
                 </NavLink>
-                <CloseButton onClick={disconnectWallet} size="sm" />
+                <CloseButton
+                  onClick={disconnectWallet}
+                  size="sm"
+                  color={"white"}
+                />
               </HStack>
             </Button>
           ) : (
             <Button
-              w={150}
+              w={160}
               h={12}
               isLoading={false}
               onClick={connectWallet}

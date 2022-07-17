@@ -18,6 +18,9 @@ import { AiOutlineInfoCircle } from "react-icons/ai";
 import { bidModalStyle } from "../../modals/bidModalStyle";
 import Modal from "react-modal";
 import { Auction, useAuctions } from "../../stores/useAuctions";
+import { toast } from "react-toastify";
+import { useContracts } from "../../stores/useContracts";
+import { BigNumber, BigNumberish, ethers } from "ethers";
 
 interface DashboardProps {}
 
@@ -26,7 +29,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [isBidModalOpen, setIsBidModalOpen] = useState<boolean>(false);
   const [isBiddingLoading, setIsBiddingLoading] = useState<boolean>(false);
   const [bidValue, setBidValue] = useState<string>("");
-  const [time, setTime] = useState<number>(Date.now());
   const fetchAuctions = useAuctions((state) => state.fetchAuctions);
   const auctionsFetched = useAuctions((state) => state.auctions);
 
@@ -36,14 +38,46 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [tokeIdFilter, setTokeIdFilter] = useState<string>("");
   const [bidderFilter, setBiderFilter] = useState<string>("");
   const [symbol, setSymbol] = useState<string>("");
+  const miranCore = useContracts((state) => state.core);
 
-  const handleOpenBidModal = useCallback(() => {
-    setIsBidModalOpen(true);
-  }, []);
+  // Bid modal
+  const [modalCollection, setModalCollection] = useState<string>("");
+  const [modalToken, setModalToken] = useState<BigNumberish>(
+    BigNumber.from("0")
+  );
+
+  const handleOpenBidModal = useCallback(
+    (collectionAddress: string, tokenId: BigNumberish) => {
+      setModalCollection(collectionAddress);
+      setModalToken(tokenId);
+      setIsBidModalOpen(true);
+    },
+    []
+  );
 
   const handleBid = async () => {
     setIsBiddingLoading(true);
-    console.log(bidValue);
+    try {
+      if (!miranCore) {
+        throw new Error("Core contract is not defined");
+      }
+
+      console.log("bidding");
+      console.log(modalCollection);
+      console.log(modalToken);
+      const result = await miranCore.bid(modalCollection, modalToken, {
+        value: ethers.utils.parseEther(bidValue),
+      });
+      await result.wait(1);
+      console.log("bid results");
+      console.log(result);
+    } catch (error: any) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      }
+      console.log(error);
+    }
+    setIsBiddingLoading(false);
   };
 
   const isVisible = (auction: Auction): boolean => {
@@ -235,7 +269,12 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                   <AuctionItem
                     {...element}
                     isFiltered={!isVisible(element)}
-                    handleBid={handleOpenBidModal}
+                    handleBid={() =>
+                      handleOpenBidModal(
+                        element.collectionAddress,
+                        element.tokenId
+                      )
+                    }
                     key={element.collectionAddress + element.tokenId}
                   />
                 ))}

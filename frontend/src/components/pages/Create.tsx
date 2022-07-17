@@ -14,8 +14,8 @@ import {
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { AiOutlineArrowLeft, AiOutlineConsoleSql } from "react-icons/ai";
-import { BigNumber, ethers } from "ethers";
+import { AiOutlineArrowLeft } from "react-icons/ai";
+import { ethers } from "ethers";
 import ERC721Contract from "../../contracts/ERC721.json";
 import { ERC721 } from "../../contracts/typechain/ERC721";
 import { useProvider } from "../../stores/useProvider";
@@ -31,11 +31,11 @@ export const Create: React.FC<CreateProps> = () => {
   const userAddress = useUserData((state) => state.address);
   const miranCore = useContracts((state) => state.core);
 
-  const [collectionAddress, setCollectionAddress] = useState<string>();
-  const [tokenId, setTokenId] = useState<string>();
-  const [startingPrice, setStartingPrice] = useState<string>();
+  const [collectionAddress, setCollectionAddress] = useState<string>("");
+  const [tokenId, setTokenId] = useState<string>("");
+  const [startingPrice, setStartingPrice] = useState<string>("");
 
-  const [isCreating, setIsCreating] = useState<boolean>();
+  const [isCreating, setIsCreating] = useState<boolean>(false);
   const handleCreateAuction = async () => {
     setIsCreating(true);
     try {
