@@ -24,17 +24,15 @@ contract MiranCore is IERC721Receiver {
     mapping(bytes32 => Auction) public auctionById;
 
     mapping(address => uint256) public deposits;
-    mapping(address => uint256) public lockedDeposits;
 
-    mapping(address => mapping(address => mapping(uint256 => bool)))
-        public isDepositedByUser;
+    mapping(address => mapping(uint256 => address)) public tokenOwner;
     mapping(address => mapping(uint256 => bool)) public isTokenLocked;
 
     uint256 public BASE_AUCTION_DURATION = 60 * 60 * 24 * 7; // 7 days
     uint256 public BID_AUCTION_DURATION = 60 * 60 * 5; // 5 hours
-    uint256 public MIN_REQUIRED_PRICE = 10000; // not relevant
+    uint256 public MIN_REQUIRED_PRICE = 1000000000; // not relevant
 
-    Auction[] public auctions;
+    bytes32[] public auctions;
 
     event Bid(
         address collectionAddress,
@@ -58,20 +56,15 @@ contract MiranCore is IERC721Receiver {
         deposits[msg.sender] += msg.value;
     }
 
-    function withdraw() external {
-        require(
-            deposits[msg.sender] - lockedDeposits[msg.sender] > 0,
-            "no available balance"
-        );
+    function withdraw(uint256 amount) external {
+        require(deposits[msg.sender] > amount, "not enough balance");
 
-        uint256 withdrawAmount = deposits[msg.sender] -
-            lockedDeposits[msg.sender];
+        deposits[msg.sender] -= amount;
 
-        deposits[msg.sender] -= withdrawAmount;
-
-        payable(msg.sender).transfer(withdrawAmount);
+        payable(msg.sender).transfer(amount);
     }
 
+    // withdraw NFT
     function withdrawToken(address collectionAddress, uint256 tokenId)
         external
     {
@@ -80,7 +73,7 @@ contract MiranCore is IERC721Receiver {
             "contract not owner"
         );
         require(
-            isDepositedByUser[msg.sender][collectionAddress][tokenId] == true,
+            tokenOwner[collectionAddress][tokenId] == msg.sender,
             "user not deposited this token"
         );
         require(
@@ -88,7 +81,21 @@ contract MiranCore is IERC721Receiver {
             "token locked"
         );
 
-        isDepositedByUser[msg.sender][collectionAddress][tokenId] = false;
+        delete tokenOwner[collectionAddress][tokenId];
+
+        uint256 userTokensLength = userTokens[msg.sender].length;
+        bytes32 auctionId = getAuctionId(collectionAddress, tokenId);
+
+        // Delete token from users tokens
+        for (uint256 i = 0; i < userTokensLength; i++) {
+            if (compareAuctionWithId(userTokens[msg.sender][i], auctionId)) {
+                userTokens[msg.sender][i] = userTokens[msg.sender][
+                    userTokensLength - 1
+                ];
+                userTokens[msg.sender].pop();
+            }
+        }
+
         IERC721(collectionAddress).safeTransferFrom(
             address(this),
             msg.sender,
@@ -96,28 +103,49 @@ contract MiranCore is IERC721Receiver {
         );
     }
 
-    function bid(address collectionAddress, uint256 tokenId) external payable {
+    function compareAuctionWithId(TokenDetails memory auction, bytes32 id)
+        public
+        pure
+        returns (bool)
+    {
+        return (keccak256(
+            abi.encodePacked(auction.collectionAddress, auction.tokenId)
+        ) == id);
+    }
+
+    function bid(
+        address collectionAddress,
+        uint256 tokenId,
+        uint256 price
+    ) external payable {
         bytes32 auctionId = getAuctionId(collectionAddress, tokenId);
+        // cannot out bid yourself
+        // cannot bid created auctions
+        // enough funds to cover price
+        // bigger then the last price
         require(
             auctionById[auctionId].creator != msg.sender,
             "cannot bid your auctions"
         );
-        require(msg.value > auctionById[auctionId].price, "bid too low");
         require(
             auctionById[auctionId].bidder != msg.sender,
             "cannot out bid yourself"
         );
+        require(msg.value + deposits[msg.sender] >= price, "bid too low");
+        require(price > auctionById[auctionId].price, "price too low");
 
-        // lock deposit of the new bidder
-        // unlock deposit of the previous bidder
-        isTokenLocked[collectionAddress][tokenId] = true;
-        lockedDeposits[msg.sender] += msg.value;
-        lockedDeposits[auctionById[auctionId].bidder] -= auctionById[auctionId]
-            .price;
+        // subtract deposit of the new bidder
+        // adjust deposit of the previous bidder
+        deposits[auctionById[auctionId].bidder] += auctionById[auctionId].price;
 
-        // set the new bidder and the new price
-        auctionById[auctionId].bidder = msg.sender;
-        auctionById[auctionId].price = msg.value;
+        if (price <= msg.value) {
+            deposits[msg.sender] += msg.value - price;
+        } else {
+            uint256 diff = price - msg.value;
+            deposits[msg.sender] -= diff;
+        }
+
+        auctionById[auctionId].price = price;
 
         // if auction is about to finish increase the ending date
         if (
@@ -162,8 +190,9 @@ contract MiranCore is IERC721Receiver {
         );
 
         isTokenLocked[collectionAddress][tokenId] = true;
-        userAuctions[msg.sender] = getAuctionId(collectionAddress, tokenId);
-        auctions.push(newAuction);
+        userAuctions[msg.sender] = auctionId;
+        auctionById[auctionId] = newAuction;
+        auctions.push(auctionId);
 
         return auctionId;
     }
@@ -174,7 +203,8 @@ contract MiranCore is IERC721Receiver {
         uint256 tokenId,
         bytes calldata
     ) external override returns (bytes4) {
-        isDepositedByUser[operator][from][tokenId] = true;
+        // check
+        tokenOwner[msg.sender][tokenId] = from;
 
         return IERC721Receiver.onERC721Received.selector;
     }
@@ -190,7 +220,7 @@ contract MiranCore is IERC721Receiver {
 
         address creator = auctionById[auctionId].creator;
 
-        isDepositedByUser[creator][collectionAddress][tokenId] = false;
+        delete tokenOwner[collectionAddress][tokenId];
         isTokenLocked[collectionAddress][tokenId] = false;
 
         IERC721(collectionAddress).safeTransferFrom(
@@ -216,6 +246,12 @@ contract MiranCore is IERC721Receiver {
     }
 
     function getAllAuctions() external view returns (Auction[] memory) {
-        return auctions;
+        Auction[] memory allAuctions = new Auction[](auctions.length);
+
+        for (uint256 i = 0; i < auctions.length; i++) {
+            allAuctions[i] = auctionById[auctions[i]];
+        }
+
+        return allAuctions;
     }
 }
