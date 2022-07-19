@@ -3,36 +3,41 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "./interfaces/IMiranCore.sol";
 
 contract MiranCore is IERC721Receiver {
     struct Auction {
+        uint256 index;
+        uint256 creationTime;
+        uint256 endingTime;
         address creator;
         address collectionAddress;
         uint256 tokenId;
-        uint256 endingTime;
         uint256 price;
         address bidder;
     }
 
     struct TokenDetails {
+        uint256 index;
         address collectionAddress;
         uint256 tokenId;
     }
 
-    mapping(address => bytes32) public userAuctions;
-    mapping(address => TokenDetails[]) public userTokens;
-    mapping(bytes32 => Auction) public auctionById;
-
-    mapping(address => uint256) public deposits;
-
-    mapping(address => mapping(uint256 => address)) public tokenOwner;
+    mapping(address => bytes32) public userAuction;
+    mapping(address => bytes32[]) public userTokens;
+    mapping(bytes32 => TokenDetails) tokenDetailsByIds;
+    mapping(address => mapping(uint256 => address)) tokenOwner;
     mapping(address => mapping(uint256 => bool)) public isTokenLocked;
 
-    uint256 public BASE_AUCTION_DURATION = 60 * 60 * 24 * 7; // 7 days
-    uint256 public BID_AUCTION_DURATION = 60 * 60 * 5; // 5 hours
-    uint256 public MIN_REQUIRED_PRICE = 1000000000; // not relevant
+    mapping(bytes32 => Auction) public auctionById;
 
-    bytes32[] public auctions;
+    mapping(address => uint256) public balance;
+
+    uint256 public BASE_AUCTION_DURATION = 7 days; // 7 days
+    uint256 public BID_AUCTION_DURATION = 5 hours; // 5 hours
+    uint256 public MIN_REQUIRED_PRICE = 1 * 1**12; // not relevant
+
+    bytes32[] public auctionsIds;
 
     event Bid(
         address collectionAddress,
@@ -50,24 +55,8 @@ contract MiranCore is IERC721Receiver {
 
     constructor() {}
 
-    function deposit() external payable {
-        require(msg.value > 0, "no deposit");
-
-        deposits[msg.sender] += msg.value;
-    }
-
-    function withdraw(uint256 amount) external {
-        require(deposits[msg.sender] > amount, "not enough balance");
-
-        deposits[msg.sender] -= amount;
-
-        payable(msg.sender).transfer(amount);
-    }
-
     // withdraw NFT
-    function withdrawToken(address collectionAddress, uint256 tokenId)
-        external
-    {
+    function withdrawToken(address collectionAddress, uint256 tokenId) public {
         require(
             IERC721(collectionAddress).ownerOf(tokenId) == address(this),
             "contract not owner"
@@ -81,36 +70,25 @@ contract MiranCore is IERC721Receiver {
             "token locked"
         );
 
+        // Delete user as a token owner
         delete tokenOwner[collectionAddress][tokenId];
 
+        // Delete token from users tokens
         uint256 userTokensLength = userTokens[msg.sender].length;
         bytes32 auctionId = getAuctionId(collectionAddress, tokenId);
 
-        // Delete token from users tokens
-        for (uint256 i = 0; i < userTokensLength; i++) {
-            if (compareAuctionWithId(userTokens[msg.sender][i], auctionId)) {
-                userTokens[msg.sender][i] = userTokens[msg.sender][
-                    userTokensLength - 1
-                ];
-                userTokens[msg.sender].pop();
-            }
-        }
+        uint256 removeTokenIndex = tokenDetailsByIds[auctionId].index;
+
+        userTokens[msg.sender][removeTokenIndex] = userTokens[msg.sender][
+            userTokensLength - 1
+        ];
+        userTokens[msg.sender].pop();
 
         IERC721(collectionAddress).safeTransferFrom(
             address(this),
             msg.sender,
             tokenId
         );
-    }
-
-    function compareAuctionWithId(TokenDetails memory auction, bytes32 id)
-        public
-        pure
-        returns (bool)
-    {
-        return (keccak256(
-            abi.encodePacked(auction.collectionAddress, auction.tokenId)
-        ) == id);
     }
 
     function bid(
@@ -131,39 +109,27 @@ contract MiranCore is IERC721Receiver {
             auctionById[auctionId].bidder != msg.sender,
             "cannot out bid yourself"
         );
-        require(msg.value + deposits[msg.sender] >= price, "bid too low");
+        require(msg.value + balance[msg.sender] >= price, "bid too low");
         require(price > auctionById[auctionId].price, "price too low");
 
         // subtract deposit of the new bidder
         // adjust deposit of the previous bidder
-        deposits[auctionById[auctionId].bidder] += auctionById[auctionId].price;
+        balance[auctionById[auctionId].bidder] += auctionById[auctionId].price;
 
         if (price <= msg.value) {
-            deposits[msg.sender] += msg.value - price;
+            balance[msg.sender] += msg.value - price;
         } else {
             uint256 diff = price - msg.value;
-            deposits[msg.sender] -= diff;
+            balance[msg.sender] -= diff;
         }
 
         auctionById[auctionId].price = price;
+        auctionById[auctionId].bidder = msg.sender;
 
         // if auction is about to finish increase the ending date
-        if (
-            block.timestamp + BID_AUCTION_DURATION >
-            auctionById[auctionId].endingTime
-        ) {
-            auctionById[auctionId].endingTime =
-                block.timestamp +
-                BID_AUCTION_DURATION;
+        if (auctionById[auctionId].endingTime - block.timestamp < 5 hours) {
+            auctionById[auctionId].endingTime = block.timestamp + 5 hours;
         }
-    }
-
-    function getAuctionId(address collectionAddress, uint256 tokenId)
-        public
-        pure
-        returns (bytes32)
-    {
-        return sha256(abi.encode(collectionAddress, tokenId));
     }
 
     function createNewAuction(
@@ -180,19 +146,22 @@ contract MiranCore is IERC721Receiver {
             "already auctioned"
         );
 
-        Auction memory newAuction = Auction(
-            msg.sender,
-            collectionAddress,
-            tokenId,
-            block.timestamp + BASE_AUCTION_DURATION,
-            startingPrice,
-            address(0)
-        );
+        uint256 auctionsLength = auctionsIds.length;
+        Auction memory newAuction = Auction({
+            index: auctionsLength,
+            creationTime: block.timestamp,
+            endingTime: block.timestamp + BASE_AUCTION_DURATION,
+            creator: msg.sender,
+            collectionAddress: collectionAddress,
+            tokenId: tokenId,
+            price: startingPrice,
+            bidder: address(0)
+        });
+
+        auctionsIds.push(auctionId);
+        auctionById[auctionId] = newAuction;
 
         isTokenLocked[collectionAddress][tokenId] = true;
-        userAuctions[msg.sender] = auctionId;
-        auctionById[auctionId] = newAuction;
-        auctions.push(auctionId);
 
         return auctionId;
     }
@@ -206,6 +175,18 @@ contract MiranCore is IERC721Receiver {
         // check
         tokenOwner[msg.sender][tokenId] = from;
 
+        // push id to user tokens
+        // put TokenDetails in a mapping
+        bytes32 id = getAuctionId(msg.sender, tokenId);
+        userTokens[msg.sender].push(id);
+
+        uint256 length = userTokens[msg.sender].length;
+        tokenDetailsByIds[id] = TokenDetails({
+            index: length - 1,
+            collectionAddress: msg.sender,
+            tokenId: tokenId
+        });
+
         return IERC721Receiver.onERC721Received.selector;
     }
 
@@ -218,23 +199,57 @@ contract MiranCore is IERC721Receiver {
         );
         require(auctionById[auctionId].bidder == msg.sender, "only winner");
 
-        address creator = auctionById[auctionId].creator;
-
-        delete tokenOwner[collectionAddress][tokenId];
+        // remove token details
+        tokenOwner[collectionAddress][tokenId] = auctionById[auctionId].bidder;
         isTokenLocked[collectionAddress][tokenId] = false;
 
-        IERC721(collectionAddress).safeTransferFrom(
-            address(this),
-            msg.sender,
-            tokenId
-        );
+        // remove auction
+        uint256 auctionIndex = auctionById[auctionId].index;
+        uint256 auctionsLength = auctionsIds.length;
 
-        deposits[auctionById[auctionId].creator] += auctionById[auctionId]
-            .price;
+        auctionsIds[auctionIndex] = auctionsIds[auctionsLength - 1];
+        auctionsIds.pop();
+
+        auctionById[auctionsIds[auctionsLength - 1]].index = auctionIndex;
+
+        // withdraw auctioned token
+        withdrawToken(collectionAddress, tokenId);
+
+        // add balance to auction creator
+        balance[auctionById[auctionId].creator] += auctionById[auctionId].price;
+    }
+
+    function deposit() external payable {
+        require(msg.value > 0, "no deposit");
+
+        balance[msg.sender] += msg.value;
+    }
+
+    function withdraw(uint256 amount) external {
+        require(balance[msg.sender] > amount, "not enough balance");
+
+        balance[msg.sender] -= amount;
+
+        payable(msg.sender).transfer(amount);
+    }
+
+    function getAuctionId(address collectionAddress, uint256 tokenId)
+        public
+        pure
+        returns (bytes32)
+    {
+        return sha256(abi.encode(collectionAddress, tokenId));
     }
 
     function getUserTokens() external view returns (TokenDetails[] memory) {
-        return userTokens[msg.sender];
+        uint256 userTokensLength = userTokens[msg.sender].length;
+        TokenDetails[] memory allTokens = new TokenDetails[](userTokensLength);
+
+        for (uint256 i = 0; i < userTokensLength; i++) {
+            allTokens[i] = tokenDetailsByIds[userTokens[msg.sender][i]];
+        }
+
+        return allTokens;
     }
 
     function getUserTokenLength() external view returns (uint256) {
@@ -242,14 +257,14 @@ contract MiranCore is IERC721Receiver {
     }
 
     function getAuctionsLength() external view returns (uint256) {
-        return auctions.length;
+        return auctionsIds.length;
     }
 
     function getAllAuctions() external view returns (Auction[] memory) {
-        Auction[] memory allAuctions = new Auction[](auctions.length);
+        Auction[] memory allAuctions = new Auction[](auctionsIds.length);
 
-        for (uint256 i = 0; i < auctions.length; i++) {
-            allAuctions[i] = auctionById[auctions[i]];
+        for (uint256 i = 0; i < auctionsIds.length; i++) {
+            allAuctions[i] = auctionById[auctionsIds[i]];
         }
 
         return allAuctions;

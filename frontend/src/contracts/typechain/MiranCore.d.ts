@@ -26,24 +26,22 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     "BID_AUCTION_DURATION()": FunctionFragment;
     "MIN_REQUIRED_PRICE()": FunctionFragment;
     "auctionById(bytes32)": FunctionFragment;
-    "auctions(uint256)": FunctionFragment;
-    "bid(address,uint256)": FunctionFragment;
+    "auctionsIds(uint256)": FunctionFragment;
+    "balance(address)": FunctionFragment;
+    "bid(address,uint256,uint256)": FunctionFragment;
     "claimAuction(address,uint256)": FunctionFragment;
     "createNewAuction(address,uint256,uint256)": FunctionFragment;
     "deposit()": FunctionFragment;
-    "deposits(address)": FunctionFragment;
     "getAllAuctions()": FunctionFragment;
     "getAuctionId(address,uint256)": FunctionFragment;
     "getAuctionsLength()": FunctionFragment;
     "getUserTokenLength()": FunctionFragment;
     "getUserTokens()": FunctionFragment;
-    "isDepositedByUser(address,address,uint256)": FunctionFragment;
     "isTokenLocked(address,uint256)": FunctionFragment;
-    "lockedDeposits(address)": FunctionFragment;
     "onERC721Received(address,address,uint256,bytes)": FunctionFragment;
-    "userAuctions(address)": FunctionFragment;
+    "userAuction(address)": FunctionFragment;
     "userTokens(address,uint256)": FunctionFragment;
-    "withdraw()": FunctionFragment;
+    "withdraw(uint256)": FunctionFragment;
     "withdrawToken(address,uint256)": FunctionFragment;
   };
 
@@ -64,12 +62,13 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "auctions",
+    functionFragment: "auctionsIds",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "balance", values: [string]): string;
   encodeFunctionData(
     functionFragment: "bid",
-    values: [string, BigNumberish]
+    values: [string, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "claimAuction",
@@ -80,7 +79,6 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     values: [string, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "deposit", values?: undefined): string;
-  encodeFunctionData(functionFragment: "deposits", values: [string]): string;
   encodeFunctionData(
     functionFragment: "getAllAuctions",
     values?: undefined
@@ -102,30 +100,22 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "isDepositedByUser",
-    values: [string, string, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "isTokenLocked",
     values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "lockedDeposits",
-    values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "onERC721Received",
     values: [string, string, BigNumberish, BytesLike]
   ): string;
-  encodeFunctionData(
-    functionFragment: "userAuctions",
-    values: [string]
-  ): string;
+  encodeFunctionData(functionFragment: "userAuction", values: [string]): string;
   encodeFunctionData(
     functionFragment: "userTokens",
     values: [string, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: "withdraw", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "withdraw",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "withdrawToken",
     values: [string, BigNumberish]
@@ -147,7 +137,11 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     functionFragment: "auctionById",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "auctions", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "auctionsIds",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "balance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "bid", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "claimAuction",
@@ -158,7 +152,6 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "deposits", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getAllAuctions",
     data: BytesLike
@@ -180,15 +173,7 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "isDepositedByUser",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "isTokenLocked",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "lockedDeposits",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -196,7 +181,7 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "userAuctions",
+    functionFragment: "userAuction",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "userTokens", data: BytesLike): Result;
@@ -288,33 +273,38 @@ export class MiranCore extends BaseContract {
       arg0: BytesLike,
       overrides?: CallOverrides
     ): Promise<
-      [string, string, BigNumber, BigNumber, BigNumber, string] & {
+      [
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        string,
+        string,
+        BigNumber,
+        BigNumber,
+        string
+      ] & {
+        index: BigNumber;
+        creationTime: BigNumber;
+        endingTime: BigNumber;
         creator: string;
         collectionAddress: string;
         tokenId: BigNumber;
-        endingTime: BigNumber;
         price: BigNumber;
         bidder: string;
       }
     >;
 
-    auctions(
+    auctionsIds(
       arg0: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<
-      [string, string, BigNumber, BigNumber, BigNumber, string] & {
-        creator: string;
-        collectionAddress: string;
-        tokenId: BigNumber;
-        endingTime: BigNumber;
-        price: BigNumber;
-        bidder: string;
-      }
-    >;
+    ): Promise<[string]>;
+
+    balance(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
     bid(
       collectionAddress: string,
       tokenId: BigNumberish,
+      price: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -335,17 +325,26 @@ export class MiranCore extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    deposits(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
-
     getAllAuctions(
       overrides?: CallOverrides
     ): Promise<
       [
-        ([string, string, BigNumber, BigNumber, BigNumber, string] & {
+        ([
+          BigNumber,
+          BigNumber,
+          BigNumber,
+          string,
+          string,
+          BigNumber,
+          BigNumber,
+          string
+        ] & {
+          index: BigNumber;
+          creationTime: BigNumber;
+          endingTime: BigNumber;
           creator: string;
           collectionAddress: string;
           tokenId: BigNumber;
-          endingTime: BigNumber;
           price: BigNumber;
           bidder: string;
         })[]
@@ -366,30 +365,19 @@ export class MiranCore extends BaseContract {
       overrides?: CallOverrides
     ): Promise<
       [
-        ([string, BigNumber] & {
+        ([BigNumber, string, BigNumber] & {
+          index: BigNumber;
           collectionAddress: string;
           tokenId: BigNumber;
         })[]
       ]
     >;
 
-    isDepositedByUser(
-      arg0: string,
-      arg1: string,
-      arg2: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
-
     isTokenLocked(
       arg0: string,
       arg1: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[boolean]>;
-
-    lockedDeposits(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
 
     onERC721Received(
       operator: string,
@@ -399,17 +387,16 @@ export class MiranCore extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    userAuctions(arg0: string, overrides?: CallOverrides): Promise<[string]>;
+    userAuction(arg0: string, overrides?: CallOverrides): Promise<[string]>;
 
     userTokens(
       arg0: string,
       arg1: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<
-      [string, BigNumber] & { collectionAddress: string; tokenId: BigNumber }
-    >;
+    ): Promise<[string]>;
 
     withdraw(
+      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -430,33 +417,35 @@ export class MiranCore extends BaseContract {
     arg0: BytesLike,
     overrides?: CallOverrides
   ): Promise<
-    [string, string, BigNumber, BigNumber, BigNumber, string] & {
+    [
+      BigNumber,
+      BigNumber,
+      BigNumber,
+      string,
+      string,
+      BigNumber,
+      BigNumber,
+      string
+    ] & {
+      index: BigNumber;
+      creationTime: BigNumber;
+      endingTime: BigNumber;
       creator: string;
       collectionAddress: string;
       tokenId: BigNumber;
-      endingTime: BigNumber;
       price: BigNumber;
       bidder: string;
     }
   >;
 
-  auctions(
-    arg0: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<
-    [string, string, BigNumber, BigNumber, BigNumber, string] & {
-      creator: string;
-      collectionAddress: string;
-      tokenId: BigNumber;
-      endingTime: BigNumber;
-      price: BigNumber;
-      bidder: string;
-    }
-  >;
+  auctionsIds(arg0: BigNumberish, overrides?: CallOverrides): Promise<string>;
+
+  balance(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   bid(
     collectionAddress: string,
     tokenId: BigNumberish,
+    price: BigNumberish,
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -477,16 +466,25 @@ export class MiranCore extends BaseContract {
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  deposits(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
-
   getAllAuctions(
     overrides?: CallOverrides
   ): Promise<
-    ([string, string, BigNumber, BigNumber, BigNumber, string] & {
+    ([
+      BigNumber,
+      BigNumber,
+      BigNumber,
+      string,
+      string,
+      BigNumber,
+      BigNumber,
+      string
+    ] & {
+      index: BigNumber;
+      creationTime: BigNumber;
+      endingTime: BigNumber;
       creator: string;
       collectionAddress: string;
       tokenId: BigNumber;
-      endingTime: BigNumber;
       price: BigNumber;
       bidder: string;
     })[]
@@ -505,23 +503,18 @@ export class MiranCore extends BaseContract {
   getUserTokens(
     overrides?: CallOverrides
   ): Promise<
-    ([string, BigNumber] & { collectionAddress: string; tokenId: BigNumber })[]
+    ([BigNumber, string, BigNumber] & {
+      index: BigNumber;
+      collectionAddress: string;
+      tokenId: BigNumber;
+    })[]
   >;
-
-  isDepositedByUser(
-    arg0: string,
-    arg1: string,
-    arg2: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
 
   isTokenLocked(
     arg0: string,
     arg1: BigNumberish,
     overrides?: CallOverrides
   ): Promise<boolean>;
-
-  lockedDeposits(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   onERC721Received(
     operator: string,
@@ -531,17 +524,16 @@ export class MiranCore extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  userAuctions(arg0: string, overrides?: CallOverrides): Promise<string>;
+  userAuction(arg0: string, overrides?: CallOverrides): Promise<string>;
 
   userTokens(
     arg0: string,
     arg1: BigNumberish,
     overrides?: CallOverrides
-  ): Promise<
-    [string, BigNumber] & { collectionAddress: string; tokenId: BigNumber }
-  >;
+  ): Promise<string>;
 
   withdraw(
+    amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -562,33 +554,35 @@ export class MiranCore extends BaseContract {
       arg0: BytesLike,
       overrides?: CallOverrides
     ): Promise<
-      [string, string, BigNumber, BigNumber, BigNumber, string] & {
+      [
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        string,
+        string,
+        BigNumber,
+        BigNumber,
+        string
+      ] & {
+        index: BigNumber;
+        creationTime: BigNumber;
+        endingTime: BigNumber;
         creator: string;
         collectionAddress: string;
         tokenId: BigNumber;
-        endingTime: BigNumber;
         price: BigNumber;
         bidder: string;
       }
     >;
 
-    auctions(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [string, string, BigNumber, BigNumber, BigNumber, string] & {
-        creator: string;
-        collectionAddress: string;
-        tokenId: BigNumber;
-        endingTime: BigNumber;
-        price: BigNumber;
-        bidder: string;
-      }
-    >;
+    auctionsIds(arg0: BigNumberish, overrides?: CallOverrides): Promise<string>;
+
+    balance(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     bid(
       collectionAddress: string,
       tokenId: BigNumberish,
+      price: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -607,16 +601,25 @@ export class MiranCore extends BaseContract {
 
     deposit(overrides?: CallOverrides): Promise<void>;
 
-    deposits(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
-
     getAllAuctions(
       overrides?: CallOverrides
     ): Promise<
-      ([string, string, BigNumber, BigNumber, BigNumber, string] & {
+      ([
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        string,
+        string,
+        BigNumber,
+        BigNumber,
+        string
+      ] & {
+        index: BigNumber;
+        creationTime: BigNumber;
+        endingTime: BigNumber;
         creator: string;
         collectionAddress: string;
         tokenId: BigNumber;
-        endingTime: BigNumber;
         price: BigNumber;
         bidder: string;
       })[]
@@ -635,26 +638,18 @@ export class MiranCore extends BaseContract {
     getUserTokens(
       overrides?: CallOverrides
     ): Promise<
-      ([string, BigNumber] & {
+      ([BigNumber, string, BigNumber] & {
+        index: BigNumber;
         collectionAddress: string;
         tokenId: BigNumber;
       })[]
     >;
-
-    isDepositedByUser(
-      arg0: string,
-      arg1: string,
-      arg2: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
 
     isTokenLocked(
       arg0: string,
       arg1: BigNumberish,
       overrides?: CallOverrides
     ): Promise<boolean>;
-
-    lockedDeposits(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     onERC721Received(
       operator: string,
@@ -664,17 +659,15 @@ export class MiranCore extends BaseContract {
       overrides?: CallOverrides
     ): Promise<string>;
 
-    userAuctions(arg0: string, overrides?: CallOverrides): Promise<string>;
+    userAuction(arg0: string, overrides?: CallOverrides): Promise<string>;
 
     userTokens(
       arg0: string,
       arg1: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<
-      [string, BigNumber] & { collectionAddress: string; tokenId: BigNumber }
-    >;
+    ): Promise<string>;
 
-    withdraw(overrides?: CallOverrides): Promise<void>;
+    withdraw(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     withdrawToken(
       collectionAddress: string,
@@ -758,11 +751,17 @@ export class MiranCore extends BaseContract {
 
     auctionById(arg0: BytesLike, overrides?: CallOverrides): Promise<BigNumber>;
 
-    auctions(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
+    auctionsIds(
+      arg0: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    balance(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     bid(
       collectionAddress: string,
       tokenId: BigNumberish,
+      price: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -783,8 +782,6 @@ export class MiranCore extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    deposits(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
-
     getAllAuctions(overrides?: CallOverrides): Promise<BigNumber>;
 
     getAuctionId(
@@ -799,20 +796,11 @@ export class MiranCore extends BaseContract {
 
     getUserTokens(overrides?: CallOverrides): Promise<BigNumber>;
 
-    isDepositedByUser(
-      arg0: string,
-      arg1: string,
-      arg2: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     isTokenLocked(
       arg0: string,
       arg1: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
-
-    lockedDeposits(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     onERC721Received(
       operator: string,
@@ -822,7 +810,7 @@ export class MiranCore extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    userAuctions(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+    userAuction(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     userTokens(
       arg0: string,
@@ -831,6 +819,7 @@ export class MiranCore extends BaseContract {
     ): Promise<BigNumber>;
 
     withdraw(
+      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -859,14 +848,20 @@ export class MiranCore extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    auctions(
+    auctionsIds(
       arg0: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    balance(
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     bid(
       collectionAddress: string,
       tokenId: BigNumberish,
+      price: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -887,11 +882,6 @@ export class MiranCore extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    deposits(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     getAllAuctions(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getAuctionId(
@@ -908,21 +898,9 @@ export class MiranCore extends BaseContract {
 
     getUserTokens(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    isDepositedByUser(
-      arg0: string,
-      arg1: string,
-      arg2: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     isTokenLocked(
       arg0: string,
       arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    lockedDeposits(
-      arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -934,7 +912,7 @@ export class MiranCore extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    userAuctions(
+    userAuction(
       arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
@@ -946,6 +924,7 @@ export class MiranCore extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     withdraw(
+      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

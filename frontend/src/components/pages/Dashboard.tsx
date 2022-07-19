@@ -65,8 +65,15 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       console.log("bidding");
       console.log(modalCollection);
       console.log(modalToken);
-      const result = await miranCore.bid(modalCollection, modalToken, {
-        value: ethers.utils.parseEther(bidValue),
+
+      const value = ethers.utils.parseEther(bidValue);
+
+      if (!value) {
+        throw new Error("Wrong bid value");
+      }
+
+      const result = await miranCore.bid(modalCollection, modalToken, value, {
+        value,
       });
       await result.wait(1);
       console.log("bid results");

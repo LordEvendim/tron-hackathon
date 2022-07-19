@@ -22,7 +22,7 @@ export const NavigationBar: React.FC<NavigationBarProps> = () => {
   const logout = useUserData((state) => state.logout);
   const location = useLocation();
   const [isHomeScreen, setIsHomescreen] = useState<Boolean>(true);
-  const [isConnecting, connectWallet, disconnectWallet] = useWallet();
+  const [, connectWallet, disconnectWallet] = useWallet();
 
   useEffect(() => {
     setIsHomescreen(location.pathname === "/" ? true : false);
@@ -75,14 +75,14 @@ export const NavigationBar: React.FC<NavigationBarProps> = () => {
             <Button variant={"outline"}>
               <HStack>
                 <NavLink to={"/profile"}>
-                  <Text color={"white"}>
+                  <Text color={isHomeScreen ? "white" : "gray.800"}>
                     {truncateAddress(userAddress, 15)}
                   </Text>
                 </NavLink>
                 <CloseButton
                   onClick={disconnectWallet}
                   size="sm"
-                  color={"white"}
+                  color={isHomeScreen ? "white" : "gray.800"}
                 />
               </HStack>
             </Button>
