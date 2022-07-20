@@ -76,26 +76,24 @@ export const Create: React.FC<CreateProps> = () => {
       ) as ERC721;
 
       console.log("Transfering the NFT");
-      const result = await collectionContract.transferFrom(
-        userAddress,
-        MIRAN_CORE,
-        tokenId
-      );
+      const result = await collectionContract[
+        "safeTransferFrom(address,address,uint256)"
+      ](userAddress, MIRAN_CORE, tokenId);
       console.log(result);
 
       await result.wait(1);
       toast.success("NFT successfully deposited");
 
-      const formatedPrice = ethers.utils.parseEther(startingPrice);
+      // const formatedPrice = ethers.utils.parseEther(startingPrice);
 
-      const resultCreation = await miranCore.createNewAuction(
-        collectionAddress,
-        tokenId,
-        formatedPrice
-      );
+      // const resultCreation = await miranCore.createNewAuction(
+      //   collectionAddress,
+      //   tokenId,
+      //   formatedPrice
+      // );
 
-      await resultCreation.wait(1);
-      toast.success("Auction has been created");
+      // await resultCreation.wait(1);
+      // toast.success("Auction has been created");
 
       setCollectionAddress("");
       setTokenId("");

@@ -10,26 +10,36 @@ import {
   Text,
   Image,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 import { useContracts } from "../../stores/useContracts";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import faker from "@faker-js/faker";
 import SampleApe from "../../assets/sample-ape.jpg";
 import { truncateAddress } from "../../helpers/truncateAddress";
+import ERC721Contract from "../../contracts/ERC721.json";
+import { ERC721 } from "../../contracts/typechain/ERC721";
 
 interface WithdrawProps {}
+
+interface TokenDetails {
+  index: BigNumber;
+  collectionAddress: string;
+  tokenId: BigNumber;
+}
 
 export const WIthdraw: React.FC<WithdrawProps> = () => {
   let navigate = useNavigate();
   const core = useContracts((state) => state.core);
 
   const [amount, setAmount] = useState<string>();
-
   const [isExecuting, setIsExecuting] = useState<boolean>();
-  const handleDeposit = async () => {
+  const [userTokens, setUserTokens] = useState<TokenDetails[]>();
+  const [userBalance, setUserBalance] = useState<string>("-");
+
+  const handleWithdrawal = async () => {
     setIsExecuting(true);
     try {
       if (!core) {
@@ -44,16 +54,16 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
       console.log(value);
 
       if (!value) {
-        throw new Error("Provide valid value");
+        throw new Error("Provide valid amount");
       }
 
-      const result = await core.deposit({ value });
+      const result = await core.withdraw(value);
       result.wait(1);
 
       console.log(result);
       setIsExecuting(false);
       setAmount("");
-      toast.success("Sucuessfully deposited HBAR");
+      toast.success("Sucuessfully deposited TRON");
     } catch (error: any) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -63,6 +73,55 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
       setIsExecuting(false);
     }
   };
+
+  const handleWithdrawToken = async (
+    collectionAddress: string,
+    tokenId: BigNumber
+  ) => {
+    try {
+      if (!core) {
+        throw new Error("Contract failed to initialize");
+      }
+
+      const result = await core.withdrawToken(collectionAddress, tokenId);
+      await result.wait(1);
+
+      toast.success("Successfully withdrawn token");
+    } catch (error: any) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      }
+
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        if (!core) {
+          throw new Error("Core contract is not initialized");
+        }
+
+        // get user tokens
+        console.log("Getting user tokens");
+        const result = await core.getUserTokens();
+        setUserTokens(result);
+        console.log(result);
+
+        const balance = await core.getUserBalance();
+        setUserBalance(ethers.utils.formatEther(balance));
+      } catch (error: any) {
+        if (error instanceof Error) {
+          toast.error(error.message);
+        }
+
+        console.log(error);
+      }
+    };
+
+    fetch();
+  }, [core]);
 
   return (
     <Container w={"full"} centerContent>
@@ -96,7 +155,7 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
             >
               <Text fontSize={"sm"}>Available balance:</Text>
               <Text fontSize={"2xl"} fontWeight={"bold"} mb={"30px"}>
-                12.321 TRN
+                {userBalance} TRN
               </Text>
               <Text ml={2} mb={1}>
                 Withdraw amount
@@ -111,7 +170,7 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
                 h={"50px"}
                 bg={"purple.400"}
                 color={"white"}
-                onClick={() => handleDeposit()}
+                onClick={() => handleWithdrawal()}
                 boxShadow={"sm"}
                 isLoading={isExecuting}
               >
@@ -124,7 +183,7 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
               Non Fungible Tokens
             </Text>
             <Grid templateColumns="repeat(3, 1fr)" gap={4}>
-              {[...new Array(5)].map(() => (
+              {userTokens?.map((element) => (
                 <Button
                   display={"flex"}
                   alignItems={"flex-start"}
@@ -149,10 +208,10 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
                     mb={"10px"}
                     ml={"10px"}
                   >
-                    {23123} #{31232}
+                    {element.tokenId.toString()} #{element.tokenId.toString()}
                   </Box>
                   <Box fontSize={"sm"} color={"gray.400"}>
-                    {truncateAddress(faker.finance.ethereumAddress(), 30)}
+                    {truncateAddress(element.collectionAddress, 30)}
                   </Box>
                 </Button>
               ))}

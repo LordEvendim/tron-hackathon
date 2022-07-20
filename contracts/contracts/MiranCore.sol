@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/IMiranCore.sol";
+import "hardhat/console.sol";
 
 contract MiranCore is IERC721Receiver {
     struct Auction {
@@ -23,7 +24,6 @@ contract MiranCore is IERC721Receiver {
         uint256 tokenId;
     }
 
-    mapping(address => bytes32) public userAuction;
     mapping(address => bytes32[]) public userTokens;
     mapping(bytes32 => TokenDetails) tokenDetailsByIds;
     mapping(address => mapping(uint256 => address)) tokenOwner;
@@ -138,6 +138,7 @@ contract MiranCore is IERC721Receiver {
         uint256 startingPrice
     ) external payable returns (bytes32) {
         require(startingPrice > MIN_REQUIRED_PRICE, "too low price");
+        console.log("Creating the new auction");
 
         bytes32 auctionId = getAuctionId(collectionAddress, tokenId);
 
@@ -172,20 +173,37 @@ contract MiranCore is IERC721Receiver {
         uint256 tokenId,
         bytes calldata
     ) external override returns (bytes4) {
+        console.log("-------");
+        console.log("Operator -> %s", operator);
+        console.log("from -> %s", from);
+        console.log("tokenId -> %s", tokenId);
+        console.log("msg.sender -> %s", msg.sender);
+
         // check
         tokenOwner[msg.sender][tokenId] = from;
 
         // push id to user tokens
         // put TokenDetails in a mapping
         bytes32 id = getAuctionId(msg.sender, tokenId);
-        userTokens[msg.sender].push(id);
+        userTokens[from].push(id);
 
-        uint256 length = userTokens[msg.sender].length;
+        uint256 length = userTokens[from].length;
         tokenDetailsByIds[id] = TokenDetails({
             index: length - 1,
             collectionAddress: msg.sender,
             tokenId: tokenId
         });
+
+        bytes32 userTokenId = userTokens[from][0];
+        console.logBytes32(userTokenId);
+        console.logBytes32(id);
+        console.log("index -> %s", tokenDetailsByIds[id].index);
+        console.log(
+            "collectionAddress -> %s",
+            tokenDetailsByIds[id].collectionAddress
+        );
+        console.log("tokenId -> %s", tokenDetailsByIds[id].tokenId);
+        console.log("userTokens length -> %s", userTokens[from].length);
 
         return IERC721Receiver.onERC721Received.selector;
     }
@@ -245,9 +263,17 @@ contract MiranCore is IERC721Receiver {
         uint256 userTokensLength = userTokens[msg.sender].length;
         TokenDetails[] memory allTokens = new TokenDetails[](userTokensLength);
 
+        console.log("-----------");
+        console.log("Getting user tokens");
+        console.log(userTokensLength);
+        console.log(msg.sender);
+        console.log(userTokens[msg.sender].length);
+
         for (uint256 i = 0; i < userTokensLength; i++) {
             allTokens[i] = tokenDetailsByIds[userTokens[msg.sender][i]];
         }
+
+        console.log(allTokens[0].tokenId);
 
         return allTokens;
     }
@@ -268,5 +294,9 @@ contract MiranCore is IERC721Receiver {
         }
 
         return allAuctions;
+    }
+
+    function getUserBalance() external view returns (uint256) {
+        return balance[msg.sender];
     }
 }

@@ -35,6 +35,7 @@ interface MiranCoreInterface extends ethers.utils.Interface {
     "getAllAuctions()": FunctionFragment;
     "getAuctionId(address,uint256)": FunctionFragment;
     "getAuctionsLength()": FunctionFragment;
+    "getUserBalance()": FunctionFragment;
     "getUserTokenLength()": FunctionFragment;
     "getUserTokens()": FunctionFragment;
     "isTokenLocked(address,uint256)": FunctionFragment;
@@ -89,6 +90,10 @@ interface MiranCoreInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "getAuctionsLength",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getUserBalance",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -162,6 +167,10 @@ interface MiranCoreInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getAuctionsLength",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getUserBalance",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -359,6 +368,8 @@ export class MiranCore extends BaseContract {
 
     getAuctionsLength(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    getUserBalance(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     getUserTokenLength(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     getUserTokens(
@@ -498,6 +509,8 @@ export class MiranCore extends BaseContract {
 
   getAuctionsLength(overrides?: CallOverrides): Promise<BigNumber>;
 
+  getUserBalance(overrides?: CallOverrides): Promise<BigNumber>;
+
   getUserTokenLength(overrides?: CallOverrides): Promise<BigNumber>;
 
   getUserTokens(
@@ -632,6 +645,8 @@ export class MiranCore extends BaseContract {
     ): Promise<string>;
 
     getAuctionsLength(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getUserBalance(overrides?: CallOverrides): Promise<BigNumber>;
 
     getUserTokenLength(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -792,6 +807,8 @@ export class MiranCore extends BaseContract {
 
     getAuctionsLength(overrides?: CallOverrides): Promise<BigNumber>;
 
+    getUserBalance(overrides?: CallOverrides): Promise<BigNumber>;
+
     getUserTokenLength(overrides?: CallOverrides): Promise<BigNumber>;
 
     getUserTokens(overrides?: CallOverrides): Promise<BigNumber>;
@@ -891,6 +908,8 @@ export class MiranCore extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     getAuctionsLength(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getUserBalance(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getUserTokenLength(
       overrides?: CallOverrides
