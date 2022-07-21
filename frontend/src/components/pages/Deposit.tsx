@@ -37,7 +37,6 @@ export const Deposit: React.FC<DepositProps> = () => {
       }
 
       const value = ethers.utils.parseEther(amount);
-      console.log(value);
 
       if (!value) {
         throw new Error("Provide valid value");
@@ -46,7 +45,6 @@ export const Deposit: React.FC<DepositProps> = () => {
       const result = await core.deposit({ value });
       result.wait(1);
 
-      console.log(result);
       setIsExecuting(false);
       setAmount("");
       toast.success("Sucuessfully deposited HBAR");

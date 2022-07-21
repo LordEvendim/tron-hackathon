@@ -38,7 +38,6 @@ export const useAuctions = create<useAuctionsStore>((set, get) => ({
   auctions: [],
   fetchAuctions: async () => {
     try {
-      console.log("fetching auctions");
       const factory = useContracts.getState().core;
 
       if (!factory) {
@@ -46,7 +45,6 @@ export const useAuctions = create<useAuctionsStore>((set, get) => ({
       }
 
       const auctions = await factory.getAllAuctions();
-      console.log(auctions);
 
       if (!auctions) {
         throw new Error("Failed to fetch auctions");
@@ -65,7 +63,6 @@ export const useAuctions = create<useAuctionsStore>((set, get) => ({
     } catch (error: any) {
       if (error instanceof Error) {
         toast.error(error.message);
-        return console.log(error.message);
       }
       console.log(error);
     }

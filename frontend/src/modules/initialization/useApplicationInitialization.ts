@@ -16,7 +16,6 @@ export const useApplicationInitialization = () => {
     try {
       setInitializationStatus({ status: "loading" });
 
-      console.log("Setting factory contract");
       if (!provider) throw new Error("Provider is unexpectedly undefined");
 
       // Application initalization goes here

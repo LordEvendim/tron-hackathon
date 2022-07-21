@@ -6,12 +6,10 @@ async function main() {
   const MiranCore = await ethers.getContractFactory("MiranCore");
   const miranCore = await MiranCore.deploy();
   await miranCore.deployed();
-  console.log("MiranCore deployed to:", miranCore.address);
 
   const MiranCollection = await ethers.getContractFactory("MiranCollection");
   const miranCollection = await MiranCollection.deploy();
   await miranCollection.deployed();
-  console.log("MiranCollection deployed to:", miranCollection.address);
 
   const signers = await ethers.getSigners();
   const deployer = signers[0];
@@ -19,12 +17,6 @@ async function main() {
     await deployer.getAddress(),
     IPFS_PREFIX + EXAMPLE_NFT_METADATA
   );
-
-  const nftOwner = await miranCollection.ownerOf(BigNumber.from("1"));
-  console.log(nftOwner);
-
-  const tokenURI = await miranCollection.tokenURI(BigNumber.from("1"));
-  console.log(tokenURI);
 }
 
 main().catch((error) => {

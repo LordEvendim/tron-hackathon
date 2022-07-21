@@ -33,8 +33,8 @@ contract MiranCore is IERC721Receiver {
 
     mapping(address => uint256) public balance;
 
-    uint256 public BASE_AUCTION_DURATION = 7 days; // 7 days
-    uint256 public BID_AUCTION_DURATION = 5 hours; // 5 hours
+    uint256 public BASE_AUCTION_DURATION = 3 minutes; // 7 days
+    uint256 public BID_AUCTION_DURATION = 1 minutes; // 5 hours
     uint256 public MIN_REQUIRED_PRICE = 1 * 1**12; // not relevant
 
     bytes32[] public auctionsIds;
@@ -128,7 +128,7 @@ contract MiranCore is IERC721Receiver {
 
         // if auction is about to finish increase the ending date
         if (auctionById[auctionId].endingTime - block.timestamp < 5 hours) {
-            auctionById[auctionId].endingTime = block.timestamp + 5 hours;
+            auctionById[auctionId].endingTime = block.timestamp + 1 minutes;
         }
     }
 
@@ -138,7 +138,6 @@ contract MiranCore is IERC721Receiver {
         uint256 startingPrice
     ) external payable returns (bytes32) {
         require(startingPrice > MIN_REQUIRED_PRICE, "too low price");
-        console.log("Creating the new auction");
 
         bytes32 auctionId = getAuctionId(collectionAddress, tokenId);
 
@@ -173,13 +172,6 @@ contract MiranCore is IERC721Receiver {
         uint256 tokenId,
         bytes calldata
     ) external override returns (bytes4) {
-        console.log("-------");
-        console.log("Operator -> %s", operator);
-        console.log("from -> %s", from);
-        console.log("tokenId -> %s", tokenId);
-        console.log("msg.sender -> %s", msg.sender);
-
-        // check
         tokenOwner[msg.sender][tokenId] = from;
 
         // push id to user tokens
@@ -195,15 +187,6 @@ contract MiranCore is IERC721Receiver {
         });
 
         bytes32 userTokenId = userTokens[from][0];
-        console.logBytes32(userTokenId);
-        console.logBytes32(id);
-        console.log("index -> %s", tokenDetailsByIds[id].index);
-        console.log(
-            "collectionAddress -> %s",
-            tokenDetailsByIds[id].collectionAddress
-        );
-        console.log("tokenId -> %s", tokenDetailsByIds[id].tokenId);
-        console.log("userTokens length -> %s", userTokens[from].length);
 
         return IERC721Receiver.onERC721Received.selector;
     }
@@ -263,17 +246,9 @@ contract MiranCore is IERC721Receiver {
         uint256 userTokensLength = userTokens[msg.sender].length;
         TokenDetails[] memory allTokens = new TokenDetails[](userTokensLength);
 
-        console.log("-----------");
-        console.log("Getting user tokens");
-        console.log(userTokensLength);
-        console.log(msg.sender);
-        console.log(userTokens[msg.sender].length);
-
         for (uint256 i = 0; i < userTokensLength; i++) {
             allTokens[i] = tokenDetailsByIds[userTokens[msg.sender][i]];
         }
-
-        console.log(allTokens[0].tokenId);
 
         return allTokens;
     }

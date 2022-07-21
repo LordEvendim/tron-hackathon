@@ -39,7 +39,6 @@ export const DepositNft: React.FC<DepositNftProps> = () => {
       const result = await core.deposit({ value: "0" });
       result.wait(1);
 
-      console.log(result);
       setIsExecuting(false);
       setCollectionAddress("");
       setTokenId("");

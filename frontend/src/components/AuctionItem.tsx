@@ -56,18 +56,14 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
             ERC721Contract.abi,
             provider.getSigner()
           ) as ERC721;
-          console.log("<> Fetching tokneURI <>");
           const tokenURI = await collectionContract.tokenURI(tokenId);
-          console.log(tokenURI);
 
           // Fetch metadata
-          console.log("<> Fetching metadata <>");
           const ipfsLink = tokenURI.split("//")[1];
 
           if (!ipfsLink) {
             throw new Error("IPFS link is wrong formated");
           }
-          console.log(ipfsLink);
           const result = await axios.get(IPFS_GATEWAY + ipfsLink);
 
           if (!result) {
@@ -78,9 +74,6 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
             throw new Error("Token has not specified image URL");
           }
 
-          console.log(result.data.image);
-
-          console.log("<> Fetching Image <>");
           const imageIpfsLink = result.data.image.split("//")[1];
 
           if (!imageIpfsLink) {
@@ -91,7 +84,6 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
           // Fetch image data
         } catch (error: any) {
           console.log(error);
-          console.log(error.message);
 
           if (error instanceof Error) {
             toast.error(error.message);

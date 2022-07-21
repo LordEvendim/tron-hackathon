@@ -62,10 +62,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         throw new Error("Core contract is not defined");
       }
 
-      console.log("bidding");
-      console.log(modalCollection);
-      console.log(modalToken);
-
       const value = ethers.utils.parseEther(bidValue);
 
       if (!value) {
@@ -76,8 +72,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         value,
       });
       await result.wait(1);
-      console.log("bid results");
-      console.log(result);
     } catch (error: any) {
       if (error instanceof Error) {
         toast.error(error.message);

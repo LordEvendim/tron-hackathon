@@ -51,7 +51,6 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
       }
 
       const value = ethers.utils.parseEther(amount);
-      console.log(value);
 
       if (!value) {
         throw new Error("Provide valid amount");
@@ -60,7 +59,6 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
       const result = await core.withdraw(value);
       result.wait(1);
 
-      console.log(result);
       setIsExecuting(false);
       setAmount("");
       toast.success("Sucuessfully deposited TRON");
@@ -104,10 +102,8 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
         }
 
         // get user tokens
-        console.log("Getting user tokens");
         const result = await core.getUserTokens();
         setUserTokens(result);
-        console.log(result);
 
         const balance = await core.getUserBalance();
         setUserBalance(ethers.utils.formatEther(balance));
