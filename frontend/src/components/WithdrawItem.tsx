@@ -11,8 +11,6 @@ import {
 } from "@chakra-ui/react";
 import React, { memo, useEffect, useState } from "react";
 import { truncateAddress } from "../helpers/truncateAddress";
-import Countdown from "react-countdown";
-import { Auction, useAuctions } from "../stores/useAuctions";
 import { ethers } from "ethers";
 import axios from "axios";
 import { IPFS_GATEWAY } from "../constants/ipfs";
@@ -20,54 +18,38 @@ import ERC721Contract from "../contracts/ERC721.json";
 import { ERC721 } from "../contracts/typechain/ERC721";
 import { useProvider } from "../stores/useProvider";
 import { toast } from "react-toastify";
+import { TokenDetails } from "./pages/Withdraw";
+import { useUserData } from "../stores/useUserData";
 import { useContracts } from "../stores/useContracts";
 import { motion } from "framer-motion";
 
-type AuctionItemProps = {
-  handleBid: () => void;
-  isFiltered: boolean;
-} & Auction;
+type WithdrawItemProps = {
+  handleRemove: (collectionAddress: string, tokenId: string) => void;
+} & TokenDetails;
 
-export const AuctionItem: React.FC<AuctionItemProps> = memo(
-  ({
-    tokenId,
-    collectionAddress,
-    bidder,
-    endingTime,
-    handleBid,
-    price,
-    isFiltered,
-  }) => {
-    const endingTimeFormated = parseInt(endingTime.toString()) * 1000;
-    const priceFormatted = ethers.utils.formatEther(price);
+export const WithdrawItem: React.FC<WithdrawItemProps> = memo(
+  ({ tokenId, collectionAddress, handleRemove }) => {
     const [isFetching, setIsFetching] = useState<boolean>(false);
     const provider = useProvider((state) => state.provider);
     const [image, setImage] = useState<string>("");
-    const [timerCompleted, setTimerCompleted] = useState<boolean>(false);
-    const [isClaiming, setIsClaiming] = useState<boolean>(false);
+    const userAddress = useUserData((state) => state.address);
     const core = useContracts((state) => state.core);
+    const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
     const [imageLoaded, setImageLoaded] = useState<boolean>(false);
-    const removeAuction = useAuctions((state) => state.removeAuction);
 
-    // Framer motion
-    const FramerContrainer = motion(Container);
+    const FramerContainer = motion(Container);
 
-    useEffect(() => {
-      if (endingTimeFormated < Date.now()) {
-        setTimerCompleted(true);
-      }
-    }, [endingTimeFormated]);
-
-    const claimAuction = async () => {
-      setIsClaiming(true);
+    const handleWithdraw = async () => {
+      setIsWithdrawing(true);
       try {
         if (!core) {
           throw new Error("Core contract is not initialized");
         }
 
-        const result = await core.claimAuction(collectionAddress, tokenId);
+        const result = await core.withdrawToken(collectionAddress, tokenId);
         await result.wait(1);
-        removeAuction(collectionAddress, tokenId.toString());
+
+        handleRemove(collectionAddress, tokenId.toString());
         console.log(result);
       } catch (error: any) {
         if (error instanceof Error) {
@@ -76,7 +58,7 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
 
         console.log(error);
       }
-      setIsClaiming(false);
+      setIsWithdrawing(false);
     };
 
     useEffect(() => {
@@ -132,12 +114,8 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
       fetchMetadata();
     }, [provider, collectionAddress, tokenId]);
 
-    if (isFiltered) {
-      return null;
-    }
-
     return (
-      <FramerContrainer
+      <FramerContainer
         p={"15px"}
         boxShadow={"lg"}
         borderRadius={"20px"}
@@ -161,58 +139,34 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
             onLoad={() => setImageLoaded(true)}
           ></Image>
         </Skeleton>
-        <Box fontSize={"md"} fontWeight={"bold"}>
+        <Box fontSize={"md"} fontWeight={"bold"} mb={"5px"}>
           {tokenId.toString()} #{tokenId.toString()}
         </Box>
         <Box fontSize={"sm"} color={"gray.400"}>
           {collectionAddress}
         </Box>
-        <Divider my={"10px"}></Divider>
+        <Divider my={"20px"}></Divider>
         <Flex direction={"column"} alignItems={"stretch"} px={"10px"}>
           <HStack mb={"5px"}>
             <Text fontSize={"smaller"} color={"gray.400"}>
-              bidder:{" "}
+              owner:{" "}
             </Text>
-            <Text color={"black"}>{truncateAddress(bidder, 20)}</Text>
+            <Text color={"black"}>{truncateAddress(userAddress, 20)}</Text>
           </HStack>
-          <Box mb={"5px"} color={"gray.400"} fontSize={"smaller"}>
-            ends in:
-          </Box>
-          <Flex justifyContent={"center"} fontSize={"3xl"} mb={"30px"}>
-            {timerCompleted ? (
-              <Box
-                fontSize={"2xl"}
-                fontWeight={"semibold"}
-                mb={"10px"}
-                mt={"10px"}
-              >
-                Auction has ended
-              </Box>
-            ) : (
-              <Countdown
-                date={endingTimeFormated}
-                onComplete={() => setTimerCompleted(true)}
-              />
-            )}
-          </Flex>
-          <Flex justifyContent={"space-between"} alignItems={"center"}>
-            {timerCompleted ? (
-              <Button
-                w={"120px"}
-                onClick={() => claimAuction()}
-                isLoading={isClaiming}
-              >
-                Claim
-              </Button>
-            ) : (
-              <Button w={"120px"} onClick={() => handleBid()}>
-                Bid
-              </Button>
-            )}
-            <Box fontWeight={"bold"}>{priceFormatted} TRN</Box>
-          </Flex>
         </Flex>
-      </FramerContrainer>
+        <Button
+          mt={"15px"}
+          w={"full"}
+          h={"50px"}
+          bg={"purple.400"}
+          color={"white"}
+          boxShadow={"md"}
+          onClick={() => handleWithdraw()}
+          isLoading={isWithdrawing}
+        >
+          Withdraw
+        </Button>
+      </FramerContainer>
     );
   }
 );

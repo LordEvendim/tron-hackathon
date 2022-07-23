@@ -130,6 +130,14 @@ contract MiranCore is IERC721Receiver {
         if (auctionById[auctionId].endingTime - block.timestamp < 5 hours) {
             auctionById[auctionId].endingTime = block.timestamp + 1 minutes;
         }
+
+        emit Bid(
+            collectionAddress,
+            tokenId,
+            msg.sender,
+            price,
+            auctionById[auctionId].endingTime
+        );
     }
 
     function createNewAuction(
@@ -185,8 +193,6 @@ contract MiranCore is IERC721Receiver {
             collectionAddress: msg.sender,
             tokenId: tokenId
         });
-
-        bytes32 userTokenId = userTokens[from][0];
 
         return IERC721Receiver.onERC721Received.selector;
     }

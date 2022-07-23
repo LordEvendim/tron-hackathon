@@ -17,7 +17,7 @@ import { AuctionItem } from "../AuctionItem";
 import { AiOutlineInfoCircle } from "react-icons/ai";
 import { bidModalStyle } from "../../modals/bidModalStyle";
 import Modal from "react-modal";
-import { Auction, useAuctions } from "../../stores/useAuctions";
+import { Auction, BidInfo, useAuctions } from "../../stores/useAuctions";
 import { toast } from "react-toastify";
 import { useContracts } from "../../stores/useContracts";
 import { BigNumber, BigNumberish, ethers } from "ethers";
@@ -26,11 +26,13 @@ interface DashboardProps {}
 
 export const Dashboard: React.FC<DashboardProps> = () => {
   let navigate = useNavigate();
+  const core = useContracts((state) => state.core);
   const [isBidModalOpen, setIsBidModalOpen] = useState<boolean>(false);
   const [isBiddingLoading, setIsBiddingLoading] = useState<boolean>(false);
   const [bidValue, setBidValue] = useState<string>("");
   const fetchAuctions = useAuctions((state) => state.fetchAuctions);
   const auctionsFetched = useAuctions((state) => state.auctions);
+  const updateAuction = useAuctions((state) => state.updateAuction);
 
   // Filters
   const [collectionAddressFilter, setCollectionAddressFilter] =
@@ -98,6 +100,46 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   useEffect(() => {
     console.log(auctionsFetched);
   }, [auctionsFetched]);
+
+  useEffect(() => {
+    try {
+      if (!core) {
+        throw new Error("Core contract is undefined");
+      }
+
+      console.log("Listening to event");
+      core.on(
+        "Bid",
+        (
+          collectionAddress: string,
+          tokenId: BigNumberish,
+          bidder: string,
+          price: BigNumberish,
+          endingTime: BigNumberish
+        ) => {
+          updateAuction({
+            bidder,
+            collectionAddress,
+            endingTime,
+            price,
+            tokenId,
+          });
+        }
+      );
+    } catch (error: any) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      }
+
+      console.log(error);
+    }
+
+    return () => {
+      if (!core) return;
+
+      core.removeAllListeners();
+    };
+  }, [core, updateAuction]);
 
   return (
     <Box w={"full"} paddingX={"80px"} marginBottom={"40px"}>

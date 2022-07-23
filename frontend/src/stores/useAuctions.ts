@@ -2,6 +2,7 @@ import { BigNumberish } from "ethers";
 import { toast } from "react-toastify";
 import create from "zustand";
 import { useContracts } from "./useContracts";
+
 export type AuctionDetails = {
   address: string;
   name: string;
@@ -32,6 +33,7 @@ interface useAuctionsStore {
   auctions: Auction[] | undefined;
   fetchAuctions: () => void;
   updateAuction: (bidInfo: BidInfo) => void;
+  removeAuction: (collectionAddress: string, tokenId: string) => void;
 }
 
 export const useAuctions = create<useAuctionsStore>((set, get) => ({
@@ -68,25 +70,40 @@ export const useAuctions = create<useAuctionsStore>((set, get) => ({
     }
   },
   updateAuction: (bidInfo: BidInfo) => {
-    const { collectionAddress, tokenId, endingTime, price } = bidInfo;
+    const { collectionAddress, tokenId, endingTime, price, bidder } = bidInfo;
     const auctions = get().auctions;
 
     if (!auctions) return;
 
+    console.log("Updating auction: " + collectionAddress);
+    console.log("with tokenId: " + tokenId);
+
     const updatedAuctions: Auction[] = auctions.map((element) =>
       element.collectionAddress === collectionAddress &&
-      element.tokenId === tokenId
+      element.tokenId.toString() === tokenId.toString()
         ? {
             creator: element.creator,
             collectionAddress: collectionAddress,
             tokenId: tokenId,
             endingTime: endingTime,
             price: price,
-            bidder: element.bidder,
+            bidder: bidder,
           }
         : element
     );
 
+    set({ auctions: updatedAuctions });
+  },
+  removeAuction: (collectionAddress: string, tokenId: string) => {
+    const auctions = get().auctions;
+
+    if (!auctions) return;
+
+    const updatedAuctions = auctions.filter(
+      (e) =>
+        e.collectionAddress !== collectionAddress &&
+        e.tokenId.toString() !== tokenId
+    );
     set({ auctions: updatedAuctions });
   },
 }));

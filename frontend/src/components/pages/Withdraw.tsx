@@ -1,5 +1,4 @@
 import {
-  Container,
   Box,
   Heading,
   Grid,
@@ -8,7 +7,6 @@ import {
   HStack,
   Input,
   Text,
-  Image,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -16,15 +14,11 @@ import { AiOutlineArrowLeft } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 import { useContracts } from "../../stores/useContracts";
 import { BigNumber, ethers } from "ethers";
-import faker from "@faker-js/faker";
-import SampleApe from "../../assets/sample-ape.jpg";
-import { truncateAddress } from "../../helpers/truncateAddress";
-import ERC721Contract from "../../contracts/ERC721.json";
-import { ERC721 } from "../../contracts/typechain/ERC721";
+import { WithdrawItem } from "../WithdrawItem";
 
 interface WithdrawProps {}
 
-interface TokenDetails {
+export interface TokenDetails {
   index: BigNumber;
   collectionAddress: string;
   tokenId: BigNumber;
@@ -72,26 +66,17 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
     }
   };
 
-  const handleWithdrawToken = async (
-    collectionAddress: string,
-    tokenId: BigNumber
-  ) => {
-    try {
-      if (!core) {
-        throw new Error("Contract failed to initialize");
-      }
+  const removeAuction = (collectionAddress: string, tokenId: string) => {
+    const tokens = userTokens;
 
-      const result = await core.withdrawToken(collectionAddress, tokenId);
-      await result.wait(1);
+    if (!tokens) return;
 
-      toast.success("Successfully withdrawn token");
-    } catch (error: any) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      }
-
-      console.log(error);
-    }
+    const updatedTokens = tokens.filter(
+      (e) =>
+        e.collectionAddress !== collectionAddress &&
+        e.tokenId.toString() !== tokenId
+    );
+    setUserTokens(updatedTokens);
   };
 
   useEffect(() => {
@@ -120,7 +105,7 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
   }, [core]);
 
   return (
-    <Container w={"full"} centerContent>
+    <Box w={"full"} paddingX={"80px"} marginBottom={"40px"}>
       <Box h={"10"} />
       <Box w={"container.xl"}>
         <HStack>
@@ -142,15 +127,15 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
               Liquidity
             </Text>
             <GridItem
-              height={"350px"}
-              background={"white"}
-              borderRadius={"lg"}
-              borderColor={"gray.200"}
-              boxShadow={"lg"}
               padding={"20px"}
+              boxShadow={"lg"}
+              borderRadius={"20px"}
+              border={"1px"}
+              borderColor={"gray.200"}
+              background={"white"}
             >
               <Text fontSize={"sm"}>Available balance:</Text>
-              <Text fontSize={"2xl"} fontWeight={"bold"} mb={"30px"}>
+              <Text fontSize={"2xl"} fontWeight={"bold"} mb={"60px"}>
                 {userBalance} TRN
               </Text>
               <Text ml={2} mb={1}>
@@ -166,9 +151,9 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
                 h={"50px"}
                 bg={"purple.400"}
                 color={"white"}
-                onClick={() => handleWithdrawal()}
                 boxShadow={"sm"}
                 isLoading={isExecuting}
+                onClick={() => handleWithdrawal()}
               >
                 Withdraw
               </Button>
@@ -180,41 +165,12 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
             </Text>
             <Grid templateColumns="repeat(3, 1fr)" gap={4}>
               {userTokens?.map((element) => (
-                <Button
-                  display={"flex"}
-                  alignItems={"flex-start"}
-                  justifyContent={"flex-start"}
-                  flexDirection={"column"}
-                  height={"300px"}
-                  background={"white"}
-                  borderRadius={"lg"}
-                  borderColor={"gray.200"}
-                  boxShadow={"lg"}
-                  padding={"10px"}
-                  className={"hover:scale-[103%] hover:bg-white duration-75"}
-                >
-                  <Image
-                    src={SampleApe}
-                    borderRadius={"lg"}
-                    mb={"15px"}
-                  ></Image>
-                  <Box
-                    fontSize={"md"}
-                    fontWeight={"bold"}
-                    mb={"10px"}
-                    ml={"10px"}
-                  >
-                    {element.tokenId.toString()} #{element.tokenId.toString()}
-                  </Box>
-                  <Box fontSize={"sm"} color={"gray.400"}>
-                    {truncateAddress(element.collectionAddress, 30)}
-                  </Box>
-                </Button>
+                <WithdrawItem {...element} handleRemove={removeAuction} />
               ))}
             </Grid>
           </GridItem>
         </Grid>
       </Box>
-    </Container>
+    </Box>
   );
 };
