@@ -153,16 +153,19 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
           duration: 0.1,
         }}
       >
-        <Skeleton isLoaded={imageLoaded}>
-          <Image
-            src={image}
-            borderRadius={"lg"}
-            mb={"10px"}
-            onLoad={() => setImageLoaded(true)}
-          ></Image>
-        </Skeleton>
+        <Flex justifyContent={"center"}>
+          <Skeleton isLoaded={imageLoaded}>
+            <Image
+              src={image}
+              borderRadius={"lg"}
+              mb={"10px"}
+              maxHeight={"300px"}
+              onLoad={() => setImageLoaded(true)}
+            ></Image>
+          </Skeleton>
+        </Flex>
         <Box fontSize={"md"} fontWeight={"bold"}>
-          {tokenId.toString()} #{tokenId.toString()}
+          #{tokenId.toString()}
         </Box>
         <Box fontSize={"sm"} color={"gray.400"}>
           {collectionAddress}
@@ -209,7 +212,7 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
                 Bid
               </Button>
             )}
-            <Box fontWeight={"bold"}>{priceFormatted} TRN</Box>
+            <Box fontWeight={"bold"}>{priceFormatted} TRX</Box>
           </Flex>
         </Flex>
       </FramerContrainer>

@@ -39,7 +39,8 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     useState<string>("");
   const [tokeIdFilter, setTokeIdFilter] = useState<string>("");
   const [bidderFilter, setBiderFilter] = useState<string>("");
-  const [symbol, setSymbol] = useState<string>("");
+  const [priceFilterLower, setPriceFilterLower] = useState<string>("");
+  const [priceFilterHigher, setPriceFilterHigher] = useState<string>("");
   const miranCore = useContracts((state) => state.core);
 
   // Bid modal
@@ -84,12 +85,46 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   };
 
   const isVisible = (auction: Auction): boolean => {
-    return collectionAddressFilter
-      ? auction.collectionAddress.substring(
-          0,
-          collectionAddressFilter.length
-        ) === collectionAddressFilter
-      : true;
+    if (
+      collectionAddressFilter &&
+      auction.collectionAddress.substring(0, collectionAddressFilter.length) !==
+        collectionAddressFilter
+    )
+      return false;
+
+    if (
+      tokeIdFilter &&
+      auction.tokenId.toString().substring(0, tokeIdFilter.length) !==
+        tokeIdFilter
+    )
+      return false;
+
+    if (
+      bidderFilter &&
+      auction.bidder.substring(0, bidderFilter.length) !== bidderFilter
+    )
+      return false;
+
+    try {
+      const filteredPriceLower =
+        ethers.utils.parseEther(priceFilterLower) ?? "";
+      if (filteredPriceLower) {
+        if (filteredPriceLower.gt(auction.price)) {
+          return false;
+        }
+      }
+    } catch (error: any) {}
+
+    try {
+      const filteredPriceHigher = ethers.utils.parseEther(priceFilterHigher);
+      if (filteredPriceHigher) {
+        if (filteredPriceHigher.lt(auction.price)) {
+          return false;
+        }
+      }
+    } catch (error: any) {}
+
+    return true;
   };
 
   // fetch auctions
@@ -227,7 +262,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               border={"1px"}
               borderColor={"gray.200"}
               background={"white"}
-              height={"600px"}
               padding={"20px"}
             >
               <Text ml={2} mb={1} fontSize={"sm"}>
@@ -235,7 +269,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </Text>
               <Input
                 backgroundColor={"white"}
-                mb={4}
+                mb={8}
                 onChange={(event) => {
                   setCollectionAddressFilter(event.target.value);
                 }}
@@ -245,7 +279,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </Text>
               <Input
                 backgroundColor={"white"}
-                mb={4}
+                mb={8}
                 onChange={(event) => {
                   setTokeIdFilter(event.target.value);
                 }}
@@ -255,7 +289,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               </Text>
               <Input
                 backgroundColor={"white"}
-                mb={4}
+                mb={8}
                 onChange={(event) => {
                   setBiderFilter(event.target.value);
                 }}
@@ -263,34 +297,17 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               <Text ml={2} mb={1} fontSize={"sm"}>
                 Price
               </Text>
-              <HStack mb={4}>
+              <HStack mb={2}>
                 <Input
                   backgroundColor={"white"}
                   onChange={(event) => {
-                    setBiderFilter(event.target.value);
+                    setPriceFilterLower(event.target.value);
                   }}
                 ></Input>
                 <Input
                   backgroundColor={"white"}
                   onChange={(event) => {
-                    setBiderFilter(event.target.value);
-                  }}
-                ></Input>
-              </HStack>
-              <Text ml={2} mb={1} fontSize={"sm"}>
-                Time to end
-              </Text>
-              <HStack mb={4}>
-                <Input
-                  backgroundColor={"white"}
-                  onChange={(event) => {
-                    setBiderFilter(event.target.value);
-                  }}
-                ></Input>
-                <Input
-                  backgroundColor={"white"}
-                  onChange={(event) => {
-                    setBiderFilter(event.target.value);
+                    setPriceFilterHigher(event.target.value);
                   }}
                 ></Input>
               </HStack>

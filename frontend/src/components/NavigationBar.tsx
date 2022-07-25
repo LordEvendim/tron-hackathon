@@ -7,12 +7,15 @@ import {
   HStack,
   Spacer,
   Text,
+  Image,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { truncateAddress } from "../helpers/truncateAddress";
 import { useWallet } from "../hooks/useWallet";
+import LogoWhite from "../assets/LogoWhite.png";
+import Logo from "../assets/Logo.png";
 
 import { useUserData } from "../stores/useUserData";
 interface NavigationBarProps {}
@@ -46,7 +49,10 @@ export const NavigationBar: React.FC<NavigationBarProps> = () => {
         <Box>
           <Heading>
             <NavLink to={"/"}>
-              <Text color={isHomeScreen ? "white" : "gray.600"}>FairHouse</Text>
+              <Image
+                src={isHomeScreen ? LogoWhite : Logo}
+                width={"200px"}
+              ></Image>
             </NavLink>
           </Heading>
         </Box>

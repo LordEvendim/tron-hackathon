@@ -136,7 +136,7 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
             >
               <Text fontSize={"sm"}>Available balance:</Text>
               <Text fontSize={"2xl"} fontWeight={"bold"} mb={"60px"}>
-                {userBalance} TRN
+                {userBalance} TRX
               </Text>
               <Text ml={2} mb={1}>
                 Withdraw amount

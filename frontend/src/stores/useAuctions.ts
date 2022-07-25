@@ -46,7 +46,7 @@ export const useAuctions = create<useAuctionsStore>((set, get) => ({
         throw new Error("Contract initialization failed");
       }
 
-      const auctions = await factory.getAllAuctions();
+      const auctions = await factory.getAuctions();
 
       if (!auctions) {
         throw new Error("Failed to fetch auctions");
