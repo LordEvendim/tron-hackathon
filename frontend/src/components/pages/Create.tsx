@@ -22,6 +22,7 @@ import { useProvider } from "../../stores/useProvider";
 import { useUserData } from "../../stores/useUserData";
 import { MIRAN_CORE } from "../../constants/contracts";
 import { useContracts } from "../../stores/useContracts";
+import { ONE } from "../../constants/tron";
 
 interface CreateProps {}
 
@@ -63,28 +64,30 @@ export const Create: React.FC<CreateProps> = () => {
         throw new Error("Starting price is not defined");
       }
 
-      const collectionContract = new ethers.Contract(
-        collectionAddress,
-        ERC721Contract.abi,
-        provider.getSigner()
-      ) as ERC721;
+      const collectionContract = await window.tronWeb
+        .contract()
+        .at(collectionAddress);
+      const result = await collectionContract
+        .safeTransferFrom(userAddress, MIRAN_CORE, tokenId)
+        .send({
+          feeLimit: 100_000_000,
+        });
+      console.log(result);
 
-      const result = await collectionContract[
-        "safeTransferFrom(address,address,uint256)"
-      ](userAddress, MIRAN_CORE, tokenId);
-
-      await result.wait(1);
       toast.success("NFT successfully deposited");
+      console.log((ONE * parseInt(startingPrice)).toString());
 
       const formatedPrice = ethers.utils.parseEther(startingPrice);
-
-      const resultCreation = await miranCore.createNewAuction(
-        collectionAddress,
-        tokenId,
-        formatedPrice
-      );
-
-      await resultCreation.wait(1);
+      const resultCreation = await miranCore
+        .createNewAuction(
+          collectionAddress,
+          tokenId.toString(),
+          (ONE * parseInt(startingPrice)).toString()
+        )
+        .send({
+          feeLimit: 100_000_000,
+        });
+      console.log(resultCreation);
       toast.success("Auction has been created");
 
       setCollectionAddress("");

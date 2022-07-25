@@ -30,14 +30,13 @@ contract MiranCore is IERC721Receiver {
     mapping(address => mapping(uint256 => bool)) public isTokenLocked;
 
     mapping(bytes32 => Auction) public auctionById;
+    bytes32[] public auctionsIds;
 
     mapping(address => uint256) public balance;
 
     uint256 public BASE_AUCTION_DURATION = 3 minutes; // 7 days
     uint256 public BID_AUCTION_DURATION = 1 minutes; // 5 hours
     uint256 public MIN_REQUIRED_PRICE = 1 * 1**12; // not relevant
-
-    bytes32[] public auctionsIds;
 
     event Bid(
         address collectionAddress,
@@ -57,10 +56,6 @@ contract MiranCore is IERC721Receiver {
 
     // withdraw NFT
     function withdrawToken(address collectionAddress, uint256 tokenId) public {
-        require(
-            IERC721(collectionAddress).ownerOf(tokenId) == address(this),
-            "contract not owner"
-        );
         require(
             tokenOwner[collectionAddress][tokenId] == msg.sender,
             "user not deposited this token"
@@ -82,7 +77,13 @@ contract MiranCore is IERC721Receiver {
         userTokens[msg.sender][removeTokenIndex] = userTokens[msg.sender][
             userTokensLength - 1
         ];
+        tokenDetailsByIds[userTokens[msg.sender][userTokensLength - 1]]
+            .index = removeTokenIndex;
+
         userTokens[msg.sender].pop();
+
+        // remove ownership and transfer
+        tokenOwner[collectionAddress][tokenId] = address(0);
 
         IERC721(collectionAddress).safeTransferFrom(
             address(this),
@@ -97,18 +98,7 @@ contract MiranCore is IERC721Receiver {
         uint256 price
     ) external payable {
         bytes32 auctionId = getAuctionId(collectionAddress, tokenId);
-        // cannot out bid yourself
-        // cannot bid created auctions
-        // enough funds to cover price
-        // bigger then the last price
-        require(
-            auctionById[auctionId].creator != msg.sender,
-            "cannot bid your auctions"
-        );
-        require(
-            auctionById[auctionId].bidder != msg.sender,
-            "cannot out bid yourself"
-        );
+
         require(msg.value + balance[msg.sender] >= price, "bid too low");
         require(price > auctionById[auctionId].price, "price too low");
 
@@ -153,6 +143,10 @@ contract MiranCore is IERC721Receiver {
             isTokenLocked[collectionAddress][tokenId] == false,
             "already auctioned"
         );
+        require(
+            tokenOwner[collectionAddress][tokenId] == msg.sender,
+            "not token owner"
+        );
 
         uint256 auctionsLength = auctionsIds.length;
         Auction memory newAuction = Auction({
@@ -170,6 +164,16 @@ contract MiranCore is IERC721Receiver {
         auctionById[auctionId] = newAuction;
 
         isTokenLocked[collectionAddress][tokenId] = true;
+
+        // Remove token from the users token list
+        uint256 removeTokenIndex = tokenDetailsByIds[auctionId].index;
+        uint256 userTokensLength = userTokens[msg.sender].length;
+        userTokens[msg.sender][removeTokenIndex] = userTokens[msg.sender][
+            userTokensLength - 1
+        ];
+        tokenDetailsByIds[userTokens[msg.sender][userTokensLength - 1]]
+            .index = removeTokenIndex;
+        userTokens[msg.sender].pop();
 
         return auctionId;
     }
@@ -204,26 +208,35 @@ contract MiranCore is IERC721Receiver {
             auctionById[auctionId].endingTime < block.timestamp,
             "not ended"
         );
-        require(auctionById[auctionId].bidder == msg.sender, "only winner");
 
-        // remove token details
-        tokenOwner[collectionAddress][tokenId] = auctionById[auctionId].bidder;
+        // assign new token owner
+        address bidder = auctionById[auctionId].bidder;
+
+        tokenOwner[collectionAddress][tokenId] = bidder;
         isTokenLocked[collectionAddress][tokenId] = false;
+        userTokens[bidder].push(auctionId);
+        tokenDetailsByIds[auctionId].index = userTokens[bidder].length - 1;
 
         // remove auction
-        uint256 auctionIndex = auctionById[auctionId].index;
-        uint256 auctionsLength = auctionsIds.length;
+        if (auctionsIds.length > 1) {
+            uint256 auctionIndex = auctionById[auctionId].index;
+            uint256 auctionsLength = auctionsIds.length;
 
-        auctionsIds[auctionIndex] = auctionsIds[auctionsLength - 1];
-        auctionsIds.pop();
+            auctionsIds[auctionIndex] = auctionsIds[auctionsLength - 1];
+            auctionsIds.pop();
 
-        auctionById[auctionsIds[auctionsLength - 1]].index = auctionIndex;
-
-        // withdraw auctioned token
-        withdrawToken(collectionAddress, tokenId);
+            auctionById[auctionsIds[auctionIndex]].index = auctionIndex;
+        } else {
+            auctionsIds.pop();
+        }
 
         // add balance to auction creator
-        balance[auctionById[auctionId].creator] += auctionById[auctionId].price;
+        if (auctionById[auctionId].bidder != address(0)) {
+            balance[auctionById[auctionId].creator] += auctionById[auctionId]
+                .price;
+        }
+
+        delete auctionById[auctionId];
     }
 
     function deposit() external payable {
@@ -240,12 +253,31 @@ contract MiranCore is IERC721Receiver {
         payable(msg.sender).transfer(amount);
     }
 
+    // view / pure
     function getAuctionId(address collectionAddress, uint256 tokenId)
         public
         pure
         returns (bytes32)
     {
         return sha256(abi.encode(collectionAddress, tokenId));
+    }
+
+    function getUserTokenLength() external view returns (uint256) {
+        return userTokens[msg.sender].length;
+    }
+
+    function getAuctionsLength() external view returns (uint256) {
+        return auctionsIds.length;
+    }
+
+    function getAuctions() external view returns (Auction[] memory) {
+        Auction[] memory allAuctions = new Auction[](auctionsIds.length);
+
+        for (uint256 i = 0; i < auctionsIds.length; i++) {
+            allAuctions[i] = auctionById[auctionsIds[i]];
+        }
+
+        return allAuctions;
     }
 
     function getUserTokens() external view returns (TokenDetails[] memory) {
@@ -257,24 +289,6 @@ contract MiranCore is IERC721Receiver {
         }
 
         return allTokens;
-    }
-
-    function getUserTokenLength() external view returns (uint256) {
-        return userTokens[msg.sender].length;
-    }
-
-    function getAuctionsLength() external view returns (uint256) {
-        return auctionsIds.length;
-    }
-
-    function getAllAuctions() external view returns (Auction[] memory) {
-        Auction[] memory allAuctions = new Auction[](auctionsIds.length);
-
-        for (uint256 i = 0; i < auctionsIds.length; i++) {
-            allAuctions[i] = auctionById[auctionsIds[i]];
-        }
-
-        return allAuctions;
     }
 
     function getUserBalance() external view returns (uint256) {

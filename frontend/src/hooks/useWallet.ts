@@ -2,12 +2,6 @@ import { ethers } from "ethers";
 import { useCallback, useState } from "react";
 import { toast } from "react-toastify";
 
-import {
-  AvailableNetworks,
-  CURRENT_NETWORK,
-  networks,
-} from "../constants/networks";
-import { useProvider } from "../stores/useProvider";
 import { useUserData } from "../stores/useUserData";
 
 type useWalletType = [
@@ -20,42 +14,28 @@ export const useWallet = (): useWalletType => {
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const login = useUserData((state) => state.login);
   const logout = useUserData((state) => state.logout);
-  const setProvider = useProvider((state) => state.setProvider);
 
   const connectWallet = useCallback(async () => {
     try {
       setIsConnecting(true);
-      if (!window.ethereum) throw new Error("Cannot find MetaMask");
+      if (!window.tronWeb) throw new Error("Cannot find TronLink");
 
-      // Switch networks
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            ...networks[CURRENT_NETWORK],
-          },
-        ],
-      });
+      const provider = new ethers.providers.Web3Provider(window.tronWeb, "any");
+      await provider.send("tron_requestAccounts", []);
 
-      // Set up wallet
-      const provider = new ethers.providers.Web3Provider(
-        window.ethereum,
-        "any"
-      );
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const address = await signer.getAddress();
+      const address = window.tronWeb.defaultAddress.base58;
 
-      if (!signer) throw new Error("Metamask is not connected");
+      if (!address) {
+        throw new Error("TronLink is not connected");
+      }
 
-      login(address);
-      setProvider(provider);
+      login(window.tronWeb.defaultAddress.base58);
       setIsConnecting(false);
     } catch (error: any) {
       toast.error(error.message);
       setIsConnecting(false);
     }
-  }, [login, setProvider]);
+  }, [login]);
 
   const disconnectWallet = () => {
     logout();

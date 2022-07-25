@@ -42,8 +42,11 @@ export const Deposit: React.FC<DepositProps> = () => {
         throw new Error("Provide valid value");
       }
 
-      const result = await core.deposit({ value });
-      result.wait(1);
+      const result = await core.deposit().send({
+        feeLimit: 100_000_000,
+        callValue: value,
+        shouldPollResponse: true,
+      });
 
       setIsExecuting(false);
       setAmount("");

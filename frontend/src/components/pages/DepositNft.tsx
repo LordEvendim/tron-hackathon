@@ -36,8 +36,11 @@ export const DepositNft: React.FC<DepositNftProps> = () => {
         throw new Error("Provide valid data");
       }
 
-      const result = await core.deposit({ value: "0" });
-      result.wait(1);
+      const result = await core.deposit({ value: "0" }).send({
+        feeLimit: 100_000_000,
+        callValue: 0,
+        shouldPollResponse: true,
+      });
 
       setIsExecuting(false);
       setCollectionAddress("");

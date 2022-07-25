@@ -21,6 +21,7 @@ import { Auction, BidInfo, useAuctions } from "../../stores/useAuctions";
 import { toast } from "react-toastify";
 import { useContracts } from "../../stores/useContracts";
 import { BigNumber, BigNumberish, ethers } from "ethers";
+import { ONE } from "../../constants/tron";
 
 interface DashboardProps {}
 
@@ -71,10 +72,15 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         throw new Error("Wrong bid value");
       }
 
-      const result = await miranCore.bid(modalCollection, modalToken, value, {
-        value,
-      });
-      await result.wait(1);
+      console.log("BID");
+      console.log(ONE * parseInt(bidValue));
+
+      const result = await miranCore
+        .bid(modalCollection, modalToken.toString(), ONE * parseInt(bidValue))
+        .send({
+          feeLimit: 100_000_000,
+          callValue: ONE * parseInt(bidValue),
+        });
     } catch (error: any) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -142,25 +148,19 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         throw new Error("Core contract is undefined");
       }
 
-      console.log("Listening to event");
-      core.on(
-        "Bid",
-        (
-          collectionAddress: string,
-          tokenId: BigNumberish,
-          bidder: string,
-          price: BigNumberish,
-          endingTime: BigNumberish
-        ) => {
-          updateAuction({
-            bidder,
-            collectionAddress,
-            endingTime,
-            price,
-            tokenId,
-          });
+      core.Bid().watch((error: any, event: any) => {
+        if (error) {
+          throw new Error(error);
         }
-      );
+
+        updateAuction({
+          bidder: event.bidder,
+          collectionAddress: event.collectionAddress,
+          endingTime: event.endingTime,
+          price: event.price,
+          tokenId: event.tokenId,
+        });
+      });
     } catch (error: any) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -168,12 +168,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
       console.log(error);
     }
-
-    return () => {
-      if (!core) return;
-
-      core.removeAllListeners();
-    };
   }, [core, updateAuction]);
 
   return (

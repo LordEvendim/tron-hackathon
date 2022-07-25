@@ -40,28 +40,32 @@ export const useAuctions = create<useAuctionsStore>((set, get) => ({
   auctions: [],
   fetchAuctions: async () => {
     try {
-      const factory = useContracts.getState().core;
+      const core = useContracts.getState().core;
 
-      if (!factory) {
+      if (!core) {
         throw new Error("Contract initialization failed");
       }
 
-      const auctions = await factory.getAuctions();
+      const auctions = await core.getAuctions().call();
+      console.log("auctions");
+      console.log(auctions);
 
       if (!auctions) {
         throw new Error("Failed to fetch auctions");
       }
 
-      const formatedAuctions = auctions.map((element) => ({
-        creator: element.creator,
-        collectionAddress: element.collectionAddress,
-        tokenId: element.tokenId,
-        endingTime: element.endingTime,
-        price: element.price,
-        bidder: element.bidder,
-      }));
+      if (auctions[0].length > 0) {
+        const formatedAuctions = auctions[0].map((element: any, i: any) => ({
+          creator: auctions[3][i],
+          collectionAddress: auctions[4][i],
+          tokenId: auctions[5][i],
+          endingTime: auctions[2][i],
+          price: auctions[6][i],
+          bidder: auctions[7][i],
+        }));
 
-      set({ auctions: formatedAuctions });
+        set({ auctions: formatedAuctions });
+      }
     } catch (error: any) {
       if (error instanceof Error) {
         toast.error(error.message);

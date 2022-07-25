@@ -13,7 +13,7 @@ import React, { memo, useEffect, useState } from "react";
 import { truncateAddress } from "../helpers/truncateAddress";
 import Countdown from "react-countdown";
 import { Auction, useAuctions } from "../stores/useAuctions";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import axios from "axios";
 import { IPFS_GATEWAY } from "../constants/ipfs";
 import ERC721Contract from "../contracts/ERC721.json";
@@ -38,8 +38,11 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
     price,
     isFiltered,
   }) => {
+    const priceFormatted = BigNumber.from(price)
+      .div(BigNumber.from(10).pow(6))
+      .toString();
+
     const endingTimeFormated = parseInt(endingTime.toString()) * 1000;
-    const priceFormatted = ethers.utils.formatEther(price);
     const [isFetching, setIsFetching] = useState<boolean>(false);
     const provider = useProvider((state) => state.provider);
     const [image, setImage] = useState<string>("");
@@ -65,8 +68,11 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
           throw new Error("Core contract is not initialized");
         }
 
-        const result = await core.claimAuction(collectionAddress, tokenId);
-        await result.wait(1);
+        const result = await core
+          .claimAuction(collectionAddress, tokenId)
+          .send({
+            feeLimit: 100_000_000,
+          });
         removeAuction(collectionAddress, tokenId.toString());
         console.log(result);
       } catch (error: any) {
@@ -88,12 +94,11 @@ export const AuctionItem: React.FC<AuctionItemProps> = memo(
           }
 
           // Get token's metadata link
-          const collectionContract = new ethers.Contract(
-            collectionAddress,
-            ERC721Contract.abi,
-            provider.getSigner()
-          ) as ERC721;
-          const tokenURI = await collectionContract.tokenURI(tokenId);
+          console.log("collectionAddress: " + collectionAddress);
+          const collectionContract = await window.tronWeb
+            .contract()
+            .at(collectionAddress);
+          const tokenURI = await collectionContract.tokenURI(tokenId).call();
 
           // Fetch metadata
           const ipfsLink = tokenURI.split("//")[1];

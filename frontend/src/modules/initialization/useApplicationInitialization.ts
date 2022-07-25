@@ -1,10 +1,7 @@
 import { AsyncActionState } from "../../types/states/asyncActionState";
 import { useCallback, useEffect, useState } from "react";
 import { useProvider } from "../../stores/useProvider";
-import { ethers } from "ethers";
 import { MIRAN_CORE } from "../../constants/contracts";
-import MiranCoreContract from "../../contracts/MiranCore.json";
-import { MiranCore } from "../../contracts/typechain/MiranCore";
 import { useContracts } from "../../stores/useContracts";
 
 export const useApplicationInitialization = () => {
@@ -19,11 +16,7 @@ export const useApplicationInitialization = () => {
       if (!provider) throw new Error("Provider is unexpectedly undefined");
 
       // Application initalization goes here
-      const coreContract = new ethers.Contract(
-        MIRAN_CORE,
-        MiranCoreContract.abi,
-        provider.getSigner()
-      ) as MiranCore;
+      const coreContract = await window.tronWeb.contract().at(MIRAN_CORE);
       useContracts.setState({ core: coreContract });
 
       setInitializationStatus({ status: "succeeded" });

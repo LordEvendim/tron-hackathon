@@ -46,8 +46,11 @@ export const WithdrawItem: React.FC<WithdrawItemProps> = memo(
           throw new Error("Core contract is not initialized");
         }
 
-        const result = await core.withdrawToken(collectionAddress, tokenId);
-        await result.wait(1);
+        const result = await core
+          .withdrawToken(collectionAddress, tokenId.toString())
+          .send({
+            feeLimit: 100_000_000,
+          });
 
         handleRemove(collectionAddress, tokenId.toString());
         console.log(result);
@@ -70,12 +73,11 @@ export const WithdrawItem: React.FC<WithdrawItemProps> = memo(
           }
 
           // Get token's metadata link
-          const collectionContract = new ethers.Contract(
-            collectionAddress,
-            ERC721Contract.abi,
-            provider.getSigner()
-          ) as ERC721;
-          const tokenURI = await collectionContract.tokenURI(tokenId);
+          console.log("collectionAddress: " + collectionAddress);
+          const collectionContract = await window.tronWeb
+            .contract()
+            .at(collectionAddress);
+          const tokenURI = await collectionContract.tokenURI(tokenId).call();
 
           // Fetch metadata
           const ipfsLink = tokenURI.split("//")[1];
@@ -140,7 +142,7 @@ export const WithdrawItem: React.FC<WithdrawItemProps> = memo(
           ></Image>
         </Skeleton>
         <Box fontSize={"md"} fontWeight={"bold"} mb={"5px"}>
-          {tokenId.toString()} #{tokenId.toString()}
+          #{tokenId?.toString()}
         </Box>
         <Box fontSize={"sm"} color={"gray.400"}>
           {collectionAddress}

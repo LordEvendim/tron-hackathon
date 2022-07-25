@@ -2,7 +2,7 @@ import create from "zustand";
 import { MiranCore } from "../contracts/typechain/MiranCore";
 
 interface ContractStore {
-  core: MiranCore | undefined;
+  core: any;
   setCore: (contract: MiranCore) => void;
 }
 

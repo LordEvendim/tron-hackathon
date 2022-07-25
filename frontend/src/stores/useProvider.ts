@@ -7,7 +7,7 @@ interface ProviderStore {
 }
 
 export const useProvider = create<ProviderStore>((set) => ({
-  provider: new ethers.providers.Web3Provider(window.ethereum, "any"),
+  provider: new ethers.providers.Web3Provider(window.tronWeb, "any"),
   setProvider: (newProvider: ethers.providers.Web3Provider) =>
     set({ provider: newProvider }),
 }));

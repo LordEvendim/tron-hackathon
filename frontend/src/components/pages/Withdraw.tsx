@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useContracts } from "../../stores/useContracts";
 import { BigNumber, ethers } from "ethers";
 import { WithdrawItem } from "../WithdrawItem";
+import { ONE } from "../../constants/tron";
 
 interface WithdrawProps {}
 
@@ -44,18 +45,14 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
         throw new Error("Provide transaction amount");
       }
 
-      const value = ethers.utils.parseEther(amount);
-
-      if (!value) {
-        throw new Error("Provide valid amount");
-      }
-
-      const result = await core.withdraw(value);
-      result.wait(1);
+      console.log(ONE * parseInt(amount));
+      const result = await core.withdraw(ONE * parseInt(amount)).send({
+        feeLimit: 100_000_000,
+      });
 
       setIsExecuting(false);
       setAmount("");
-      toast.success("Sucuessfully deposited TRON");
+      toast.success("Sucuessfully withdrawn TRON");
     } catch (error: any) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -87,11 +84,27 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
         }
 
         // get user tokens
-        const result = await core.getUserTokens();
-        setUserTokens(result);
+        const result = await core.getUserTokens().call();
 
-        const balance = await core.getUserBalance();
-        setUserBalance(ethers.utils.formatEther(balance));
+        console.log("User tokens");
+        console.log(result);
+
+        if (result[0].length > 0) {
+          const formatedAuctions = result[0].map((element: any, i: any) => ({
+            index: result[0][i],
+            collectionAddress: result[1][i],
+            tokenId: result[2][i],
+          }));
+          setUserTokens(formatedAuctions);
+        }
+
+        const balance = await core.getUserBalance().call();
+
+        const balanceFormatted = BigNumber.from(balance)
+          .div(BigNumber.from(10).pow(6))
+          .toString();
+
+        setUserBalance(balanceFormatted);
       } catch (error: any) {
         if (error instanceof Error) {
           toast.error(error.message);
@@ -144,7 +157,9 @@ export const WIthdraw: React.FC<WithdrawProps> = () => {
               <Input
                 backgroundColor={"white"}
                 mb={6}
-                onChange={(event) => {}}
+                onChange={(event) => {
+                  setAmount(event.target.value);
+                }}
               ></Input>
               <Button
                 w={"full"}

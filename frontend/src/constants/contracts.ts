@@ -1,1 +1,1 @@
-export const MIRAN_CORE = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82";
+export const MIRAN_CORE = "TPQzM6Mi3hdo9GetN7tP6VFpcsqT5te5Dn";
